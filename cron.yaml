@@ -1,0 +1,4 @@
+cron:
+- description: Parse the timeline looking for tweets
+  url: /fetch
+  schedule: every 2 minutes
