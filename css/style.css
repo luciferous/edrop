@@ -14,9 +14,10 @@ body > div {
 h1 {
   font-weight: normal;
   text-align: center;
-  font-size: 38px;
+  font-size: 48px;
   margin-bottom: 40px;
-  letter-spacing: -3px;
+  letter-spacing: 2px;
+  color: #4c4c4c;
 }
 
 a:hover {
