@@ -26,48 +26,43 @@ class Extract(webapp.RequestHandler):
     batch = next_batch()
     if not batch:
       return
-
-    query = Topic.gql("WHERE name = :1", "the")
-    if (not query.get()):
-      t = Topic(name="the")
-      t.save()
-
     tweets = extract_tweets(batch)
-    tweettopics = edrop.create_tweet_topics(tweets)
-
-    for tt in tweettopics:
-      self.response.out.write("<p><strong>%s</strong>%s</p>" %
-          (str(tt.parent), tt.tweet.content))
-
+    edrop.tag_with_topics(tweets)
     batch.delete()
     db.save(tweets)
-    db.save(tweettopics)
+
+class Create(webapp.RequestHandler):
+  def get(self):
+    topic_name = self.request.get("topic")
+    topic = Topic.gql("WHERE name = :1", topic_name).get()
+    if not topic:
+      topic = edrop.create_topic(topic_name)
 
 class Display(webapp.RequestHandler):
   def get(self):
-    self.response.out.write(""" <html><head><title>edrop</title></head>
-        <body><ul>
-          <li><a href="/extract">Extract</a></li>
-          <li><a href="/fetch">Fetch</a></li>
-          <pre>%s</pre>
-        </ul></body></html>""" % str(self))
+    topic_name = self.request.get("topic")
+    query = Topic.gql("WHERE name = :1", topic_name)
+    topic = query.get()
+    if not topic:
+      self.response.out.write("None")
+    else:
+      tweets = topic.tweets.fetch(10)
+      template_values = { 'topic': topic, 'tweets': tweets }
+      path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
+      self.response.out.write(template.render(path, template_values))
+
 
 class Welcome(webapp.RequestHandler):
   def get(self):
-    self.response.out.write(""" <html><head><title>edrop</title></head>
-        <body><ul>
-          <li><a href="/fetch">Fetch</a></li>
-          <li><a href="/extract">Extract</a></li>
-        </ul></body></html>""")
-
-    #path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
-    #self.response.out.write(template.render(path, template_values))
+    path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
+    self.response.out.write(template.render(path, template_values))
 
 application = webapp.WSGIApplication([
   ('/', Welcome),
-  ('/r', Display),
+  ('/display', Display),
   ('/fetch', Fetch),
-  ('/extract', Extract)
+  ('/extract', Extract),
+  ('/create', Create)
 ], debug=True)
 
 def main():

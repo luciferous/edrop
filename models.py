@@ -15,6 +15,7 @@ class Tweet(db.Model):
   pic_url = db.LinkProperty()
   author = db.StringProperty()
   source_id = db.StringProperty()
+  topics = db.ListProperty(db.Key)
 
   def source_url(self):
     return "http://twitter.com/%s/statuses/%s" % (self.author, self.source_id)
@@ -22,17 +23,13 @@ class Tweet(db.Model):
 class Topic(db.Model):
   name = db.StringProperty()
 
-class TweetTopic(db.Model):
-  tweet = db.ReferenceProperty(Tweet)
+  @property
+  def tweets(self):
+    return Tweet.gql("WHERE topics = :1", self.key())
 
 def next_batch():
   query = Batch.gql("ORDER BY created_at ASC")
   return query.get()
-
-def commit_batch_topics(batch, tweettopics):
-  if (len(tweettopics) > 0):
-    db.put(tweettopics)
-  batch.delete()
 
 def extract_tweets(batch):
   dec = decoder.JSONDecoder()
