@@ -14,7 +14,6 @@ class Fetch(webapp.RequestHandler):
     response = urlfetch.fetch(url)
     if response.status_code == 200 and response.content.startswith("["):
       Batch(data=response.content).save()
-      self.redirect("/run/etl")
 
 class ETL(webapp.RequestHandler):
   def get(self):
