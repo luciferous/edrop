@@ -12,11 +12,24 @@
 
 <body>
 <div>
-  <h1>{{ topic.name }}</h1>
+  <h1>edrop</h1>
 
-  {% for tweet in tweets %}
-    <div class="tweet">Tweet:{{ tweet.content }}</div>
-  {% endfor %}
+  <h2>What are you listening for?</h3>
+  <form method="GET" action="/show">
+    <input type="text" length="48" name="topic"/>
+    <button type="submit">Eavesdrop</button>
+  </form>
+
+  {% if topics %}
+    <p>Other people are eavesdropping on:</p>
+    <ul>
+    {% for topic in topics %}
+      <li>{{ topic.name|escape }}</li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>Nobody's eavesdropping on anything yet.</p>
+  {% endif %}
 
 </div>
 </body>

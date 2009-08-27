@@ -5,63 +5,50 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 
 from models import *
-import edrop
 
+import edrop
 import os
 import wsgiref.handlers
-
-class Fetch(webapp.RequestHandler):
-  def get(self):
-    url = "http://twitter.com/statuses/public_timeline.json"
-    response = urlfetch.fetch(url)
-
-    if (response.status_code == 200):
-      if response.content.startswith("["):
-        batch = Batch(data=response.content)
-        batch.save()
-        self.redirect("/extract")
-
-class Extract(webapp.RequestHandler):
-  def get(self):
-    batch = next_batch()
-    if not batch:
-      return
-    tweets = extract_tweets(batch)
-    edrop.tag_with_topics(tweets)
-    batch.delete()
-    db.save(tweets)
+import urllib
 
 class Create(webapp.RequestHandler):
   def get(self):
+    notfound = self.request.get("notfound")
+    topic = self.request.get("topic")
+    template_values = { 'topic_name': topic, 'notfound': notfound }
+    path = os.path.join(os.path.dirname(__file__), 'templates/create.html')
+    self.response.out.write(template.render(path, template_values))
+
+  def post(self):
     topic_name = self.request.get("topic")
     topic = Topic.gql("WHERE name = :1", topic_name).get()
     if not topic:
       topic = edrop.create_topic(topic_name)
+    self.redirect('/show?' + urllib.urlencode({'topic': topic_name}))
 
-class Display(webapp.RequestHandler):
+class Show(webapp.RequestHandler):
   def get(self):
     topic_name = self.request.get("topic")
-    query = Topic.gql("WHERE name = :1", topic_name)
-    topic = query.get()
-    if not topic:
-      self.response.out.write("None")
-    else:
+    topic = Topic.gql("WHERE name = :1", topic_name).get()
+    if topic:
       tweets = topic.tweets.fetch(10)
       template_values = { 'topic': topic, 'tweets': tweets }
-      path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
+      path = os.path.join(os.path.dirname(__file__), 'templates/show.html')
       self.response.out.write(template.render(path, template_values))
+    else:
+      params = {'topic': topic_name, 'notfound': 1}
+      self.redirect('/create?' + urllib.urlencode(params))
 
-
-class Welcome(webapp.RequestHandler):
+class Main(webapp.RequestHandler):
   def get(self):
+    topics = Topic.all().fetch(5)
+    template_values = { 'topics': topics }
     path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
     self.response.out.write(template.render(path, template_values))
 
 application = webapp.WSGIApplication([
-  ('/', Welcome),
-  ('/display', Display),
-  ('/fetch', Fetch),
-  ('/extract', Extract),
+  ('/', Main),
+  ('/show', Show),
   ('/create', Create)
 ], debug=True)
 

@@ -7,6 +7,30 @@ from models import *
 import re
 import time
 
+def extract_tweets(batch):
+  dec = decoder.JSONDecoder()
+  feed = dec.decode(batch.data)
+  tweets = []
+  for item in feed:
+    tweet = Tweet(key_name="tweet|%d" % (item['id']),
+                  content=item['text'],
+                  created_at=parse_created_at(item['created_at']),
+                  pic_url=item['user']['profile_image_url'],
+                  author=item['user']['screen_name'],
+                  source_id=str(item['id']),
+                  topics=[])
+    tweets.append(tweet)
+  return tweets
+
+def find_topics(tweet):
+  topics = []
+  words = re.findall("\w+", tweet.content)
+  for topic_name in set([w.lower() for w in words]):
+    topic = get_topic(topic_name)
+    if topic:
+      topics.append(topic)
+  return topics
+
 def tag_with_topics(tweets):
   tweettopics = []
   alpha_re = re.compile("\w+")
