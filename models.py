@@ -22,6 +22,7 @@ class Tweet(db.Model):
 
 class Topic(db.Model):
   name = db.StringProperty()
+  created_at = db.DateTimeProperty(auto_now_add=True)
 
   @property
   def tweets(self):
