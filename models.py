@@ -25,7 +25,7 @@ class Topic(db.Model):
 
   @property
   def tweets(self):
-    return Tweet.gql("WHERE topics = :1", self.key())
+    return Tweet.all().filter("topics =", self.key())
 
 def next_batch():
   query = Batch.gql("ORDER BY created_at ASC")
