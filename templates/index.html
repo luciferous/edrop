@@ -1,37 +1,16 @@
-<!DOCTYPE html>
+<h2>What are you listening for?</h3>
+<form method="GET" action="/show">
+  <input type="text" length="48" name="topic"/>
+  <button type="submit">Eavesdrop</button>
+</form>
 
-<html>
-<head>
-  <title>edrop | everybody's talking about it</title>
-  <style>@import "css/style.css";</style>
-  <!--<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>-->
-  <script type="text/javascript">
-    // $(function() { });
-  </script>
-</head>
-
-<body>
-<div>
-  <h1>edrop</h1>
-
-  <h2>What are you listening for?</h3>
-  <form method="GET" action="/show">
-    <input type="text" length="48" name="topic"/>
-    <button type="submit">Eavesdrop</button>
-  </form>
-
-  {% if topics %}
-    <p>Other people are eavesdropping on:</p>
-    <ul>
-    {% for topic in topics %}
-      <li>{{ topic.name|escape }}</li>
-    {% endfor %}
-    </ul>
-  {% else %}
-    <p>Nobody's eavesdropping on anything yet.</p>
-  {% endif %}
-
-</div>
-</body>
-
-</html>
+{% if topics %}
+  <h3>Recently eavesdropped:</h3>
+  <ul>
+  {% for tweet in tweets %}
+    <li>{{ tweet.content|escape }}</li>
+  {% endfor %}
+  </ul>
+{% else %}
+  <p>Nobody's eavesdropping on anything yet.</p>
+{% endif %}

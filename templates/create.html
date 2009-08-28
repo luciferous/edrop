@@ -1,27 +1,9 @@
-<!DOCTYPE html>
-
-<html>
-<head>
-  <title>edrop | everybody's talking about it</title>
-  <style>@import "css/style.css";</style>
-  <!--<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>-->
-  <script type="text/javascript">
-    // $(function() { });
-  </script>
-</head>
-
-<body>
-<div>
-  <h1>{{ topic_name|escape}}</h1>
-  <h2>You're the first to want to eavesdrop on tweets about {{ topic_name|escape}}!</h2>
-  <form method="POST" action="/create">
-    <input type="hidden" name="topic" value="{{ topic_name|escape }}"/>
-    <div class="dialog-buttons">
-      <button type="submit">Eavesdrop</button>
-      <a href="/">Actually, I've changed my mind</a>
-    </div>
-  </form>
-</div>
-</body>
-
-</html>
+<h2>Nobody knows about {{ topic_name|escape}} yet. You're the first person to
+  eavesdrop on it!</h2>
+<form method="POST" action="/create">
+  <input type="hidden" name="topic" value="{{ topic_name|escape }}"/>
+  <div class="dialog-buttons">
+    <button type="submit">Eavesdrop</button>
+    <a href="/">Actually, I've changed my mind</a>
+  </div>
+</form>

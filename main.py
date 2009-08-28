@@ -15,8 +15,13 @@ class Create(webapp.RequestHandler):
   def get(self):
     notfound = self.request.get("notfound")
     topic = self.request.get("topic")
-    template_values = { 'topic_name': topic, 'notfound': notfound }
-    path = os.path.join(os.path.dirname(__file__), 'templates/create.html')
+    template_values = {
+        'title': topic,
+        'template': 'create.html',
+        'topic_name': topic,
+        'notfound': notfound
+        }
+    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
 
   def post(self):
@@ -30,20 +35,33 @@ class Show(webapp.RequestHandler):
   def get(self):
     topic_name = self.request.get("topic")
     topic = Topic.gql("WHERE name = :1", topic_name).get()
-    if topic:
-      tweets = topic.tweets.fetch(10)
-      template_values = { 'topic': topic, 'tweets': tweets }
-      path = os.path.join(os.path.dirname(__file__), 'templates/show.html')
-      self.response.out.write(template.render(path, template_values))
-    else:
+    if not topic:
       params = {'topic': topic_name, 'notfound': 1}
       self.redirect('/create?' + urllib.urlencode(params))
+      return
+
+    template_values = {
+        'title': topic_name,
+        'template': 'show.html',
+        'tweets': topic.tweets.order("-created_at").fetch(10),
+        'topic': topic
+        }
+    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
+    self.response.out.write(template.render(path, template_values))
 
 class Main(webapp.RequestHandler):
   def get(self):
-    topics = Topic.all().fetch(5)
-    template_values = { 'topics': topics }
-    path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
+    tweets = Tweet.all().order("-created_at").fetch(5)
+    keys = sum([t.topics for t in tweets], [])
+    topics = db.get(keys)
+
+    template_values = {
+        'title': 'edrop',
+        'template': 'index.html',
+        'topics': set([t.name for t in topics]),
+        'tweets': tweets
+        }
+    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
 
 application = webapp.WSGIApplication([
