@@ -1,24 +1,36 @@
 #!/usr/bin/env python
 
 from google.appengine.api import memcache
+from google.appengine.api import users
 
 from models import *
 
 import re
 import time
+import math
+import datetime
+
+DAY_SCALE = 4
+LOCAL_EPOCH = datetime.datetime(2009, 7, 12)
 
 def extract_tweets(batch):
   dec = decoder.JSONDecoder()
   feed = dec.decode(batch.data)
   tweets = []
   for item in feed:
-    tweet = Tweet(key_name="tweet|%d" % (item['id']),
+    tweet = Tweet(key_name="tweet:%d" % (item['id']),
                   content=item['text'],
                   created_at=parse_created_at(item['created_at']),
                   pic_url=item['user']['profile_image_url'],
                   author=item['user']['screen_name'],
                   source_id=str(item['id']),
                   topics=[])
+    days = (tweet.created_at - LOCAL_EPOCH).days
+    influence_factor = max(1, item['user']['followers_count'])
+    tweet.influence = "%020d|%s" % (
+        long(days * DAY_SCALE + math.log(influence_factor)),
+        tweet.source_id
+        )
     tweets.append(tweet)
   return tweets
 

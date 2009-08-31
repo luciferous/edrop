@@ -16,6 +16,7 @@ class Tweet(db.Model):
   author = db.StringProperty()
   source_id = db.StringProperty()
   topics = db.ListProperty(db.Key)
+  influence = db.StringProperty()
 
   def source_url(self):
     return "http://twitter.com/%s/statuses/%s" % (self.author, self.source_id)
@@ -23,6 +24,8 @@ class Tweet(db.Model):
 class Topic(db.Model):
   name = db.StringProperty()
   created_at = db.DateTimeProperty(auto_now_add=True)
+  creator = db.UserProperty()
+  score = db.IntegerProperty(default=0)
 
   @property
   def tweets(self):
