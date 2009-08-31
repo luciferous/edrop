@@ -14,11 +14,16 @@ import urllib
 class Create(webapp.RequestHandler):
   def get(self):
     notfound = self.request.get("notfound")
-    topic = self.request.get("topic")
+    topic_name = self.request.get("topic")
+
+    topic = edrop.get_topic(topic_name)
+    if topic:
+      self.showtopic(topic_name)
+
     template_values = {
-        'title': topic,
+        'title': topic_name,
         'template': 'create.html',
-        'topic_name': topic,
+        'topic_name': topic_name,
         'notfound': notfound
         }
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
@@ -29,6 +34,9 @@ class Create(webapp.RequestHandler):
     topic = edrop.get_topic(topic_name)
     if not topic:
       topic = edrop.create_topic(topic_name)
+    self.showtopic(topic_name)
+
+  def showtopic(self, topic_name):
     self.redirect('/show?' + urllib.urlencode({'topic': topic_name}))
 
 class Show(webapp.RequestHandler):

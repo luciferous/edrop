@@ -31,21 +31,10 @@ def find_topics(tweet):
       topics.append(topic)
   return topics
 
-def tag_with_topics(tweets):
-  tweettopics = []
-  alpha_re = re.compile("\w+")
-
-  for tweet in tweets:
-    names = [word.lower() for word in alpha_re.findall(tweet.content)]
-    for topic_name in set(names):
-      topic = get_topic(topic_name)
-      if topic:
-        tweet.topics.append(topic.key())
-
 def get_topic(name):
-  topic = memcache.get(name, namespace="topic")
-  if topic is not None:
-    return topic[1]
+  tuple = memcache.get(name, namespace="topic")
+  if tuple:
+    return tuple[1]
 
   topic = Topic.gql("WHERE name = :1", name.lower()).get()
   memcache.set(name, (name, topic), namespace="topic")
@@ -53,11 +42,13 @@ def get_topic(name):
   return topic
 
 def create_topic(name):
-  topic = memcache.get(name, namespace="topic")
-  if topic and topic[1]:
-    return
+  tuple = memcache.get(name, namespace="topic")
+  if tuple and tuple[1]:
+    return tuple[1]
 
-  topic = Topic.get_or_insert("key:" + name, name=name)
+  topic = Topic.get_or_insert("key:" + name,
+                              name=name,
+                              user=users.get_current_user())
   memcache.set(name, (name, topic), namespace="topic")
 
   return topic
