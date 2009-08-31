@@ -1,13 +1,19 @@
 {% if tweets %}
   {% for tweet in tweets %}
-  <p class="tweet">
+  <div class="tweet">
     <img src="{{ tweet.pic_url }}"/>
-    <span class="submitted">{{ tweet.author }}</span>
-    <span class="description">
-      <a href="{{ tweet.source_url }}">{{ tweet.content }}</a>
-    </span>
-  </p>
+    <span class="content">{{ tweet.content }}</span>
+    <p class="meta">
+      <span class="author">{{ tweet.author }}</span>
+      <span class="submitted">{{ tweet.created_at|timesince }} ago</span>
+      <a href="{{ tweet.source_url }}">View original</a>
+    </p>
+  </div>
   {% endfor %}
+
+  <p>{{ topic.name }} has remained interesting for
+  {{ topic.created_at|timesince }} since
+  {{ topic.created_at|date:"d M Y" }}.</p>
 {% else %}
 <div>Nobody is talking about {{ topic.name|escape }}...yet.</div>
 {% endif %}

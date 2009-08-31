@@ -1,13 +1,14 @@
 body {
   margin: 0;
   padding: 0;
-  font: 76% "Lucida Sans Grande",sans-serif,clean;
+  font: 78% "Lucida Sans Grande",Verdana,sans-serif,clean;
   color: #9c9c9c;
 }
 
 body > div {
-  margin: 0 auto;
+  margin: 0 30px;
   width: 87%;
+  max-width: 500px;
 }
 
 .header:after {
@@ -25,45 +26,51 @@ h1 {
   margin: 10px 0 20px;
 }
 
+a {
+  color: #898989;
+  padding: 0 5px;
+}
+
 a:hover {
-  color: #b4b4b4;
+  color: #2727b4;
+  text-decoration: underline;
 }
 
 a, a:link, a:active {
   text-decoration: none;
 }
 
-div.dialog-buttons a, div.dialog-buttons button {
+p {
+  margin: 10px 0;
+}
+
+div.dialog-buttons a, div.dialog-buttons input[type=submit] {
   margin-right: 12px;
 }
 
 .tweet {
-  margin-bottom: 10px;
+  margin: 10px 0;
+  font-size: 16px;
 }
 
-.tweet .submitted {
-  color: #676767;
+.meta {
+  color: #4a4a4a;
   font-size: 9px;
 }
 
+.meta .author {
+  font-size: 15px;
+  margin-right: 10px;
+}
+
 .tweet img {
-  float: left;
-  margin: 0 7px;
-  border: 4px solid #474747;
+  float: right;
+  margin: 0 20px;
+  border: 1px solid black;
 }
 
-.description {
-  display: block;
-}
-
-.description, .description a, .description a:active {
-  line-height: 16px;
-  font-size: 12px;
+.content {
   color: black;
-}
-
-.description a:visited {
-  color: #9c9c9c;
 }
 
 .tweet:after {
