@@ -11,6 +11,9 @@ import os
 import wsgiref.handlers
 import urllib
 
+def show_topic_url(topic_name):
+  return '/show?' + urllib.urlencode({'topic': topic_name})
+
 class Create(webapp.RequestHandler):
   def get(self):
     notfound = self.request.get("notfound")
@@ -18,7 +21,7 @@ class Create(webapp.RequestHandler):
 
     topic = edrop.get_topic(topic_name)
     if topic:
-      self.showtopic(topic_name)
+      self.redirect(show_topic_url(topic_name))
 
     template_values = {
         'title': topic_name,
@@ -34,10 +37,7 @@ class Create(webapp.RequestHandler):
     topic = edrop.get_topic(topic_name)
     if not topic:
       topic = edrop.create_topic(topic_name)
-    self.showtopic(topic_name)
-
-  def showtopic(self, topic_name):
-    self.redirect('/show?' + urllib.urlencode({'topic': topic_name}))
+    self.redirect(show_topic_url(topic_name))
 
 class Show(webapp.RequestHandler):
   def get(self):
@@ -48,11 +48,18 @@ class Show(webapp.RequestHandler):
       self.redirect('/create?' + urllib.urlencode(params))
       return
 
+    order = self.request.get("order")
+    if order not in ("-created_at", "-influence"):
+      order = "-created_at"
+
+    tweets = topic.tweets.order(order)
+
     template_values = {
         'title': topic_name,
         'template': 'show.html',
-        'tweets': topic.tweets.order("-created_at").fetch(10),
-        'topic': topic
+        'tweets': tweets.fetch(10),
+        'topic': topic,
+        'url': show_topic_url(topic_name)
         }
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))

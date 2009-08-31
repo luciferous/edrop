@@ -1,3 +1,7 @@
+<span class="left">Sort tweets by:</span><ul id="sort-menu">
+  <li><a href="{{ url }}">Most recent</a></li>
+  <li><a href="{{ url }}&order=-influence">Most influence</a></li>
+</ul>
 {% if tweets %}
   {% for tweet in tweets %}
   <div class="tweet">

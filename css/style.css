@@ -33,6 +33,25 @@ a {
   padding: 2px;
 }
 
+ul#sort-menu li {
+  float: left;
+  list-style: none;
+  margin-left: 20px;
+}
+
+ul#sort-menu {
+  margin: 0 0 20px;
+  padding: 0;
+}
+
+ul#sort-menu:after {
+  content:".";
+  height: 0px;
+  visibility: hidden;
+  clear: both;
+  display: block;
+}
+
 .meta a, .meta a:hover {
   background: transparent;
 }
@@ -47,7 +66,7 @@ a:hover {
 }
 
 p {
-  margin: 10px 0;
+  margin: 10px 0 0;
 }
 
 div.dialog-buttons a, div.dialog-buttons input[type=submit] {
@@ -62,7 +81,6 @@ div.dialog-buttons a, div.dialog-buttons input[type=submit] {
 .meta {
   color: #4a4a4a;
   font-size: 12px;
-  line-height: 18px;
 }
 
 .meta .author {
@@ -76,7 +94,7 @@ div.dialog-buttons a, div.dialog-buttons input[type=submit] {
 
 .tweet img {
   float: right;
-  margin: 0 20px;
+  margin-left: 20px;
   border: 1px solid black;
 }
 
@@ -90,4 +108,14 @@ div.dialog-buttons a, div.dialog-buttons input[type=submit] {
   clear: both;
   visibility: hidden;
   height: 0;
+}
+
+.tweet {
+  background: #eee;
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+
+.left {
+  float: left;
 }
