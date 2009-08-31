@@ -47,7 +47,7 @@ def get_topic(name):
   if topic is not None:
     return topic[1]
 
-  topic = Topic.gql("WHERE name = :1", name).get()
+  topic = Topic.gql("WHERE name = :1", name.lower()).get()
   memcache.set(name, (name, topic), namespace="topic")
 
   return topic
