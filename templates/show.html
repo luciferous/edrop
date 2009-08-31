@@ -15,5 +15,6 @@
   {{ topic.created_at|timesince }} since
   {{ topic.created_at|date:"d M Y" }}.</p>
 {% else %}
-<div>Nobody is talking about {{ topic.name|escape }}...yet.</div>
+<p>Nobody has talked about <strong>{{ topic.name|escape }}</strong> since we
+started eavesdropping {{ topic.created_at|timesince }} ago.</p>
 {% endif %}
