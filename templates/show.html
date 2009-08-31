@@ -8,11 +8,11 @@
     <img src="{{ tweet.pic_url }}" alt="Picture of {{ tweet.author }}"
     height="48" width="48"/>
     <span class="content">{{ tweet.content|urlize }}</span>
-    <p class="meta">
+    <div class="meta">
       <span class="author">{{ tweet.author }}</span>
       <span class="submitted">{{ tweet.created_at|timesince }} ago</span>
       <a href="{{ tweet.source_url }}">View original</a>
-    </p>
+    </div>
   </div>
   {% endfor %}
 
