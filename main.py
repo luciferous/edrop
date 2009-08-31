@@ -76,13 +76,9 @@ class Show(webapp.RequestHandler):
 class Main(webapp.RequestHandler):
   def get(self):
     tweets = Tweet.all().order("-created_at").fetch(5)
-    keys = sum([t.topics for t in tweets], [])
-    topics = db.get(keys)
-
     template_values = {
         'title': 'edrop',
         'template': 'index.html',
-        'topics': set([t.name for t in topics]),
         'tweets': tweets
         }
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
