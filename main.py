@@ -3,6 +3,7 @@
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
+from google.appengine.api import datastore_errors
 
 from models import *
 
@@ -52,12 +53,20 @@ class Show(webapp.RequestHandler):
     if order not in ("-created_at", "-influence"):
       order = "-created_at"
 
-    tweets = topic.tweets.order(order)
+    messages = []
+    try:
+      raise datastore_errors.NeedIndexError()
+      tweets = topic.tweets.order(order).fetch(10)
+    except datastore_errors.NeedIndexError:
+      tweets = topic.tweets.fetch(10)
+      messages.append("""These results are unsorted because indexes are currently
+      unavailable.""")
 
     template_values = {
         'title': topic_name,
+        'messages': messages,
         'template': 'show.html',
-        'tweets': tweets.fetch(10),
+        'tweets': tweets,
         'topic': topic,
         'url': show_topic_url(topic_name)
         }
