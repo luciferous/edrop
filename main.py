@@ -26,7 +26,7 @@ class Create(webapp.RequestHandler):
 
   def post(self):
     topic_name = self.request.get("topic")
-    topic = Topic.gql("WHERE name = :1", topic_name).get()
+    topic = edrop.get_topic(topic_name)
     if not topic:
       topic = edrop.create_topic(topic_name)
     self.redirect('/show?' + urllib.urlencode({'topic': topic_name}))
@@ -34,7 +34,7 @@ class Create(webapp.RequestHandler):
 class Show(webapp.RequestHandler):
   def get(self):
     topic_name = self.request.get("topic")
-    topic = Topic.gql("WHERE name = :1", topic_name).get()
+    topic = edrop.get_topic(topic_name)
     if not topic:
       params = {'topic': topic_name, 'notfound': 1}
       self.redirect('/create?' + urllib.urlencode(params))
