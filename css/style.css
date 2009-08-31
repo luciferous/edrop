@@ -27,17 +27,23 @@ h1 {
 }
 
 a {
-  color: #898989;
-  padding: 0 5px;
+  color: #5879a8;
+  background: #e0e0e0;
+  text-decoration: none;
+  padding: 2px;
+}
+
+.meta a, .meta a:hover {
+  background: transparent;
 }
 
 a:hover {
   color: #2727b4;
-  text-decoration: underline;
+  background: #c0c0c0;
 }
 
-a, a:link, a:active {
-  text-decoration: none;
+.content {
+  line-height: 22px;
 }
 
 p {
@@ -55,11 +61,16 @@ div.dialog-buttons a, div.dialog-buttons input[type=submit] {
 
 .meta {
   color: #4a4a4a;
-  font-size: 9px;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .meta .author {
-  font-size: 15px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.meta > * {
   margin-right: 10px;
 }
 
