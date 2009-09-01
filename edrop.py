@@ -64,3 +64,7 @@ def create_topic(name):
   memcache.set(name, (name, topic), namespace="topic")
 
   return topic
+
+def expire_cache(all=False):
+  if all:
+    memcache.flush_all()

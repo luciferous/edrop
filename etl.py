@@ -31,9 +31,14 @@ class ETL(webapp.RequestHandler):
     batch.delete()
     db.save(ontopic)
 
+class ExpireCache(webapp.RequestHandler):
+  def get(self):
+    edrop.expire_cache(all=True)
+
 application = webapp.WSGIApplication([
   ('/run/fetch', Fetch),
-  ('/run/etl', ETL)
+  ('/run/etl', ETL),
+  ('/run/expirecache', ExpireCache)
 ], debug=True)
 
 def main():
