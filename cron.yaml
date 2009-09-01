@@ -1,8 +1,4 @@
 cron:
-- description: Fetch tweets
-  url: /run/fetch
-  schedule: every 1 minutes
-
-- description: Parse the timeline looking for tweets
-  url: /run/etl
+- description: Queue tasks for fetching tweets
+  url: /run/queuefetch
   schedule: every 1 minutes

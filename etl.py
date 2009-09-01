@@ -2,21 +2,32 @@
 
 from google.appengine.ext import webapp
 from google.appengine.api import urlfetch
+from google.appengine.api.labs import taskqueue
 
 from models import *
 
 import edrop
 import wsgiref.handlers
 
-class Fetch(webapp.RequestHandler):
+class QueueFetch(webapp.RequestHandler):
   def get(self):
     url = "http://twitter.com/statuses/public_timeline.json"
+    task = taskqueue.Task(
+        url='/run/fetch',
+        params={'url': url}
+        )
+    task.add('fetch')
+
+class Fetch(webapp.RequestHandler):
+  def post(self):
+    url = self.request.get('url')
     response = urlfetch.fetch(url)
     if response.status_code == 200 and response.content.startswith("["):
       Batch(data=response.content).save()
+      taskqueue.Task(url='/run/etl').add('etl')
 
 class ETL(webapp.RequestHandler):
-  def get(self):
+  def post(self):
     batch = next_batch()
     if not batch:
       return
@@ -37,6 +48,7 @@ class ExpireCache(webapp.RequestHandler):
     result = edrop.expire_cache(key)
 
 application = webapp.WSGIApplication([
+  ('/run/queuefetch', QueueFetch),
   ('/run/fetch', Fetch),
   ('/run/etl', ETL),
   ('/run/expirecache', ExpireCache)
