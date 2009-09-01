@@ -1,7 +1,7 @@
 <h2>Nobody knows about {{ topic_name|escape}} yet. You're the first person to
   eavesdrop on it!</h2>
-<form method="POST" action="/create">
-  <input type="hidden" name="topic" value="{{ topic_name|escape }}"/>
+<form method="POST" action="/topics">
+  <input type="hidden" name="name" value="{{ topic_name|escape }}"/>
   <div class="dialog-buttons">
     <input type="submit" value="Eavesdrop"/>
     <a href="/">Actually, I've changed my mind</a>

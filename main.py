@@ -11,6 +11,7 @@ import edrop
 import os
 import wsgiref.handlers
 import urllib
+import re
 
 def show_topic_url(topic_name):
   return '/show?' + urllib.urlencode({'topic': topic_name})
@@ -40,15 +41,29 @@ class Create(webapp.RequestHandler):
       topic = edrop.create_topic(topic_name)
     self.redirect(show_topic_url(topic_name))
 
-class Show(webapp.RequestHandler):
+class TopicController(webapp.RequestHandler):
   def get(self):
-    topic_name = self.request.get("topic")
+    pathitems = re.findall(u'/(\w+)*', self.request.path_info)
+    if len(pathitems) == 1 or not pathitems[1]:
+      topic_name = self.request.get('name')
+      # Redirect /topics?name=foo => /topics/foo
+      if topic_name:
+        self.redirect(self.request.path + '/' + topic_name)
+    else:
+      self.show(pathitems[1])
+
+  def post(self):
+    topic_name = self.request.get("name")
     topic = edrop.get_topic(topic_name)
     if not topic:
-      params = {'topic': topic_name, 'notfound': 1}
-      self.redirect('/create?' + urllib.urlencode(params))
-      return
+      topic = edrop.create_topic(topic_name)
+    self.redirect(self.request.path + '/' + topic_name)
 
+  def show(self, topic_name):
+    topic = edrop.get_topic(topic_name)
+    if not topic:
+      self.createtopic(topic_name)
+      return
     order = self.request.get("order")
     if order not in ("-created_at", "-influence"):
       order = "-created_at"
@@ -73,6 +88,15 @@ class Show(webapp.RequestHandler):
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
 
+  def createtopic(self, topic_name):
+    template_values = {
+        'title': topic_name,
+        'template': 'create.html',
+        'topic_name': topic_name,
+        }
+    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
+    self.response.out.write(template.render(path, template_values))
+
 class Main(webapp.RequestHandler):
   def get(self):
     tweets = Tweet.all().order("-created_at").fetch(5)
@@ -86,8 +110,7 @@ class Main(webapp.RequestHandler):
 
 application = webapp.WSGIApplication([
   ('/', Main),
-  ('/show', Show),
-  ('/create', Create)
+  ('/topics/?.*', TopicController),
 ], debug=True)
 
 def main():
