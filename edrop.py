@@ -18,13 +18,15 @@ def extract_tweets(batch):
   feed = dec.decode(batch.data)
   tweets = []
   for item in feed:
-    tweet = Tweet(key_name="tweet:%d" % (item['id']),
-                  content=item['text'],
-                  created_at=parse_created_at(item['created_at']),
-                  pic_url=item['user']['profile_image_url'],
-                  author=item['user']['screen_name'],
-                  source_id=str(item['id']),
-                  topics=[])
+    tweet = Tweet(
+        key_name="tweet:%d" % (item['id']),
+        content=item['text'],
+        created_at=parse_created_at(item['created_at']),
+        pic_url=item['user']['profile_image_url'],
+        author=item['user']['screen_name'],
+        source_id=str(item['id']),
+        topics=[]
+        )
     days = (tweet.created_at - LOCAL_EPOCH).days
     influence_factor = max(1, item['user']['followers_count'])
     tweet.influence = "%020d|%s" % (
@@ -58,9 +60,11 @@ def create_topic(name):
   if tuple and tuple[1]:
     return tuple[1]
 
-  topic = Topic.get_or_insert("key:" + name,
-                              name=name,
-                              user=users.get_current_user())
+  topic = Topic.get_or_insert(
+      "key:" + name,
+      name=name,
+      user=users.get_current_user()
+      )
   memcache.set(name, (name, topic), namespace="topic")
 
   return topic
