@@ -70,7 +70,6 @@ class TopicController(webapp.RequestHandler):
 
     messages = []
     try:
-      raise datastore_errors.NeedIndexError()
       tweets = topic.tweets.order(order).fetch(10)
     except datastore_errors.NeedIndexError:
       tweets = topic.tweets.fetch(10)
