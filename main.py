@@ -10,11 +10,7 @@ from models import *
 import edrop
 import os
 import wsgiref.handlers
-import urllib
 import re
-
-def show_topic_url(topic_name):
-  return '/show?' + urllib.urlencode({'topic': topic_name})
 
 class Create(webapp.RequestHandler):
   def get(self):
@@ -23,7 +19,7 @@ class Create(webapp.RequestHandler):
 
     topic = edrop.get_topic(topic_name)
     if topic:
-      self.redirect(show_topic_url(topic_name))
+      self.redirect(self.request.path + '/' + topic_name)
 
     template_values = {
         'title': topic_name,
@@ -39,7 +35,7 @@ class Create(webapp.RequestHandler):
     topic = edrop.get_topic(topic_name)
     if not topic:
       topic = edrop.create_topic(topic_name)
-    self.redirect(show_topic_url(topic_name))
+    self.redirect(self.request.path + '/' + topic_name)
 
 class TopicController(webapp.RequestHandler):
   def get(self):
@@ -82,7 +78,7 @@ class TopicController(webapp.RequestHandler):
         'template': 'show.html',
         'tweets': tweets,
         'topic': topic,
-        'url': show_topic_url(topic_name)
+        'request_path': self.request.path
         }
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
