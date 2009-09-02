@@ -46,16 +46,18 @@ def find_topics(tweet):
   return topics
 
 def get_topic(name):
+  name = name.lower().strip()
   tuple = memcache.get(name, namespace="topic")
   if tuple:
     return tuple[1]
 
-  topic = Topic.gql("WHERE name = :1", name.lower()).get()
+  topic = Topic.gql("WHERE name = :1", name).get()
   memcache.set(name, (name, topic), namespace="topic")
 
   return topic
 
 def create_topic(name):
+  name = name.lower().strip()
   tuple = memcache.get(name, namespace="topic")
   if tuple and tuple[1]:
     return tuple[1]
