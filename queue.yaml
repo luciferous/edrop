@@ -1,0 +1,5 @@
+queue:
+- name: fetch
+  rate: 2/m
+- name: etl
+  rate: 3/m 
