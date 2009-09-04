@@ -12,31 +12,6 @@ import os
 import wsgiref.handlers
 import re
 
-class Create(webapp.RequestHandler):
-  def get(self):
-    notfound = self.request.get("notfound")
-    topic_name = self.request.get("topic")
-
-    topic = edrop.get_topic(topic_name)
-    if topic:
-      self.redirect(self.request.path + '/' + topic_name)
-
-    template_values = {
-        'title': topic_name,
-        'template': 'create.html',
-        'topic_name': topic_name,
-        'notfound': notfound
-        }
-    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
-    self.response.out.write(template.render(path, template_values))
-
-  def post(self):
-    topic_name = self.request.get("topic")
-    topic = edrop.get_topic(topic_name)
-    if not topic:
-      topic = edrop.create_topic(topic_name)
-    self.redirect(self.request.path + '/' + topic_name)
-
 class TopicController(webapp.RequestHandler):
   def get(self):
     pathitems = re.findall(u'/(\w+)*', self.request.path_info)
