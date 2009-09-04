@@ -1,3 +1,4 @@
+{% if topic %}
 {% if tweets %}
   <span class="left">Sort tweets by:</span><ul id="sort-menu">
     <li><a href="{{ request_path }}">Most recent</a></li>
@@ -22,4 +23,18 @@
 {% else %}
 <p>Nobody has talked about <strong>{{ topic.name|escape }}</strong> since we
 started eavesdropping {{ topic.created_at|timesince }} ago.</p>
+{% endif %}
+
+{% else %}
+
+  <h2>Nobody knows about {{ topic_name|escape }} yet. You're
+    the first person to eavesdrop on it!</h2>
+  <form method="POST" action="/topics/">
+    <input type="hidden" name="name" value="{{ topic_name|escape }}"/>
+    <div class="dialog-buttons">
+      <input type="submit" value="Eavesdrop"/>
+      <a href="/">Actually, I've changed my mind</a>
+    </div>
+  </form>
+
 {% endif %}

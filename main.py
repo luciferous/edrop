@@ -14,39 +14,27 @@ import re
 
 class TopicDetail(webapp.RequestHandler):
   def get(self, topic_name):
+    order = self.request.get("order") or "-created_at"
     topic = edrop.get_topic(topic_name)
-    if not topic:
-      self._create(topic_name)
-      return
 
-    order = self.request.get("order")
-    if order not in ("-created_at", "-influence"):
-      order = "-created_at"
-
+    tweets = []
     messages = []
     try:
-      tweets = topic.tweets.order(order).fetch(10)
+      if topic:
+        tweets = topic.tweets.order(order).fetch(10)
     except datastore_errors.NeedIndexError:
       tweets = topic.tweets.fetch(10)
       messages.append("""These results are unsorted because indexes are currently
       unavailable.""")
 
     template_values = {
+        'topic_name': topic_name,
         'title': topic_name,
         'messages': messages,
         'template': 'show.html',
         'tweets': tweets,
         'topic': topic,
         'request_path': self.request.path
-        }
-    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
-    self.response.out.write(template.render(path, template_values))
-
-  def _create(self, topic_name):
-    template_values = {
-        'title': topic_name,
-        'template': 'create.html',
-        'topic_name': topic_name,
         }
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
