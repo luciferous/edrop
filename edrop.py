@@ -71,6 +71,9 @@ def create_topic(name):
 
   return topic
 
-def expire_cache(all=False):
-  if all:
-    memcache.flush_all()
+def expire_cache(key=None):
+  if not key:
+    result = memcache.flush_all()
+  else:
+    result = memcache.delete(key, namespace="topic")
+  return result

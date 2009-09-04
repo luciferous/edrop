@@ -33,7 +33,8 @@ class ETL(webapp.RequestHandler):
 
 class ExpireCache(webapp.RequestHandler):
   def get(self):
-    edrop.expire_cache(all=True)
+    key = self.request.get("key")
+    result = edrop.expire_cache(key)
 
 application = webapp.WSGIApplication([
   ('/run/fetch', Fetch),
