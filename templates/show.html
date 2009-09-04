@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
 {% if topic %}
 {% if tweets %}
   <span class="left">Sort tweets by:</span><ul id="sort-menu">
@@ -38,3 +41,4 @@ started eavesdropping {{ topic.created_at|timesince }} ago.</p>
   </form>
 
 {% endif %}
+{% endblock content %}

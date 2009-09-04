@@ -31,12 +31,11 @@ class TopicDetail(webapp.RequestHandler):
         'topic_name': topic_name,
         'title': topic_name,
         'messages': messages,
-        'template': 'show.html',
         'tweets': tweets,
         'topic': topic,
         'request_path': self.request.path
         }
-    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
+    path = os.path.join(os.path.dirname(__file__), 'templates/show.html')
     self.response.out.write(template.render(path, template_values))
 
 class TopicIndex(webapp.RequestHandler):
@@ -58,10 +57,9 @@ class Main(webapp.RequestHandler):
     tweets = Tweet.all().order("-created_at").fetch(5)
     template_values = {
         'title': 'edrop',
-        'template': 'index.html',
         'tweets': tweets
         }
-    path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
+    path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
     self.response.out.write(template.render(path, template_values))
 
   def post(self):
