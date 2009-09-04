@@ -12,29 +12,13 @@ import os
 import wsgiref.handlers
 import re
 
-class TopicController(webapp.RequestHandler):
-  def get(self):
-    pathitems = re.findall(u'/(\w+)*', self.request.path_info)
-    if len(pathitems) == 1 or not pathitems[1]:
-      topic_name = self.request.get('name')
-      # Redirect /topics?name=foo => /topics/foo
-      if topic_name:
-        self.redirect(self.request.path + '/' + topic_name)
-    else:
-      self.show(pathitems[1])
-
-  def post(self):
-    topic_name = self.request.get("name")
+class TopicDetail(webapp.RequestHandler):
+  def get(self, topic_name):
     topic = edrop.get_topic(topic_name)
     if not topic:
-      topic = edrop.create_topic(topic_name)
-    self.redirect(self.request.path + '/' + topic_name)
-
-  def show(self, topic_name):
-    topic = edrop.get_topic(topic_name)
-    if not topic:
-      self.createtopic(topic_name)
+      self._create(topic_name)
       return
+
     order = self.request.get("order")
     if order not in ("-created_at", "-influence"):
       order = "-created_at"
@@ -58,7 +42,7 @@ class TopicController(webapp.RequestHandler):
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
 
-  def createtopic(self, topic_name):
+  def _create(self, topic_name):
     template_values = {
         'title': topic_name,
         'template': 'create.html',
@@ -66,6 +50,20 @@ class TopicController(webapp.RequestHandler):
         }
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
+
+class TopicIndex(webapp.RequestHandler):
+  def get(self):
+    self.error(404) # Nothing here yet
+
+  def post(self):
+    topic_name = self.request.get('name')
+    if topic_name:
+      topic = edrop.get_topic(topic_name)
+      if not topic:
+        topic = edrop.create_topic(topic_name)
+      self.redirect('/topics/%s' % topic.name)
+    else:
+      self.error(400) # Bad request
 
 class Main(webapp.RequestHandler):
   def get(self):
@@ -78,9 +76,17 @@ class Main(webapp.RequestHandler):
     path = os.path.join(os.path.dirname(__file__), 'templates/base.html')
     self.response.out.write(template.render(path, template_values))
 
+  def post(self):
+    topic_name = self.request.get('name')
+    if topic_name:
+      self.redirect('/topics/%s' % topic_name)
+    else:
+      self.error(404)
+
 application = webapp.WSGIApplication([
   ('/', Main),
-  ('/topics/?.*', TopicController),
+  ('/topics/', TopicIndex),
+  ('/topics/(.+)', TopicDetail)
 ], debug=True)
 
 def main():
