@@ -9,6 +9,7 @@ import re
 import time
 import math
 import datetime
+import logging
 
 DAY_SCALE = 4
 LOCAL_EPOCH = datetime.datetime(2009, 7, 12)
@@ -18,22 +19,28 @@ def extract_tweets(batch):
   feed = dec.decode(batch.data)
   tweets = []
   for item in feed:
-    tweet = Tweet(
-        key_name="tweet:%d" % (item['id']),
-        content=item['text'],
-        created_at=parse_created_at(item['created_at']),
-        pic_url=item['user']['profile_image_url'],
-        author=item['user']['screen_name'],
-        source_id=str(item['id']),
-        topics=[]
-        )
-    days = (tweet.created_at - LOCAL_EPOCH).days
-    influence_factor = max(1, item['user']['followers_count'])
-    tweet.influence = "%020d|%s" % (
-        long(days * DAY_SCALE + math.log(influence_factor)),
-        tweet.source_id
-        )
-    tweets.append(tweet)
+    try:
+      tweet = Tweet(
+          key_name="tweet:%d" % (item['id']),
+          content=item['text'],
+          created_at=parse_created_at(item['created_at']),
+          pic_url=item['user']['profile_image_url'],
+          author=item['user']['screen_name'],
+          source_id=str(item['id']),
+          topics=[]
+          )
+      days = (tweet.created_at - LOCAL_EPOCH).days
+      influence_factor = max(1, item['user']['followers_count'])
+      tweet.influence = "%020d|%s" % (
+          long(days * DAY_SCALE + math.log(influence_factor)),
+          tweet.source_id
+          )
+      tweets.append(tweet)
+    except BadValueError, e:
+      logging.error("Error saving tweet %d from %s: %s." %
+          (item['id'], item['user']['screen_name'], e.message)
+          )
+
   return tweets
 
 def find_topics(tweet):
