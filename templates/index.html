@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>What are you listening for?</h2>
-<form method="POST" action="/">
-  <input type="text" size="20" name="name"/>
-  <input type="submit" value="Eavesdrop"/>
-</form>
 
-{% if tweets %}
-  <h3>Recently eavesdropped:</h3>
-  <ul>
-  {% for tweet in tweets %}
-    <li>{{ tweet.content|escape }}</li>
-  {% endfor %}
-  </ul>
-{% else %}
-  <p>Nobody's eavesdropping on anything yet.</p>
-{% endif %}
+  <h2>what are you listening for?</h2>
+  <form method="post" action="/">
+    <input type="text" size="20" name="name"/>
+    <input type="submit" value="eavesdrop"/>
+  </form>
+
+  {% if tweets %}
+    <h3>recently eavesdropped:</h3>
+    <ul>
+    {% for tweet in tweets %}
+      <li>{{ tweet.content|escape }}</li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>nobody's eavesdropping on anything yet.</p>
+  {% endif %}
+
 {% endblock content %}

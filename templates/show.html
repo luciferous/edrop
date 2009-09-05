@@ -1,44 +1,50 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if topic %}
-{% if tweets %}
-  <span class="left">Sort tweets by:</span><ul id="sort-menu">
-    <li><a href="{{ request_path }}">Most recent</a></li>
-    <li><a href="{{ request_path }}?&order=-influence">Most influence</a></li>
-  </ul>
-  {% for tweet in tweets %}
-  <div class="tweet">
-    <img src="{{ tweet.pic_url }}" alt="Picture of {{ tweet.author }}"
-    height="48" width="48"/>
-    <span class="content">{{ tweet.content|urlize }}</span>
-    <div class="meta">
-      <span class="author">{{ tweet.author }}</span>
-      <span class="submitted">{{ tweet.created_at|timesince }} ago</span>
-      <a href="{{ tweet.source_url }}">View original</a>
-    </div>
-  </div>
-  {% endfor %}
+  {% if topic %}
+    {% if tweets %}
 
-  <p>{{ topic.name }} has remained interesting for
-  {{ topic.created_at|timesince }} since
-  {{ topic.created_at|date:"d M Y" }}.</p>
-{% else %}
-<p>Nobody has talked about <strong>{{ topic.name|escape }}</strong> since we
-started eavesdropping {{ topic.created_at|timesince }} ago.</p>
-{% endif %}
+      <span class="left">Sort tweets by:</span><ul id="sort-menu">
+        <li><a href="{{ request_path }}">Most recent</a></li>
+        <li><a href="{{ request_path }}?&order=-influence"
+          >Most influence</a></li>
+      </ul>
 
-{% else %}
+      {% for tweet in tweets %}
+        <div class="tweet">
+          <img src="{{ tweet.pic_url }}" alt="Picture of {{ tweet.author }}"
+          height="48" width="48"/>
+          <span class="content">{{ tweet.content|urlize }}</span>
+          <div class="meta">
+            <span class="author">{{ tweet.author }}</span>
+            <span class="submitted">{{ tweet.created_at|timesince }} ago</span>
+            <a href="{{ tweet.source_url }}">View original</a>
+          </div>
+        </div>
+      {% endfor %}
 
-  <h2>Nobody knows about {{ topic_name|escape }} yet. You're
-    the first person to eavesdrop on it!</h2>
-  <form method="POST" action="/topics/">
-    <input type="hidden" name="name" value="{{ topic_name|escape }}"/>
-    <div class="dialog-buttons">
-      <input type="submit" value="Eavesdrop"/>
-      <a href="/">Actually, I've changed my mind</a>
-    </div>
-  </form>
+      <p>{{ topic.name }} has remained interesting for
+      {{ topic.created_at|timesince }} since
+      {{ topic.created_at|date:"d M Y" }}.</p>
 
-{% endif %}
+    {% else %}
+
+      <p>Nobody has talked about <strong>{{ topic.name|escape }}</strong> since
+      we started eavesdropping {{ topic.created_at|timesince }} ago.</p>
+
+    {% endif %}
+
+  {% else %}
+
+    <h2>Nobody knows about {{ topic_name|escape }} yet. You're
+      the first person to eavesdrop on it!</h2>
+    <form method="POST" action="/topics/">
+      <input type="hidden" name="name" value="{{ topic_name|escape }}"/>
+      <div class="dialog-buttons">
+        <input type="submit" value="Eavesdrop"/>
+        <a href="/">Actually, I've changed my mind</a>
+      </div>
+    </form>
+
+  {% endif %}
 {% endblock content %}
