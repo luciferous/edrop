@@ -8,6 +8,7 @@ from models import *
 
 import edrop
 import wsgiref.handlers
+import logging
 
 class QueueFetch(webapp.RequestHandler):
   def get(self):
@@ -32,12 +33,19 @@ class Fetch(webapp.RequestHandler):
 
 class ETL(webapp.RequestHandler):
   def post(self):
-    id = self.request.get('batch_id')
-    if not id:
+    try:
+      id = self.request.get('batch_id')
+      batch = Batch.get_by_id(long(id))
+    except ValueError:
+      # Flush tasks with bad batch ids
+      self.response.set_status(200)
       return
-    batch = Batch.get_by_id(long(id))
+
     if not batch:
+      logging.warning("Batch not found %s." % id)
+      self.error(400)
       return
+
     tweets = edrop.extract_tweets(batch)
     ontopic = []
     for tweet in tweets:
