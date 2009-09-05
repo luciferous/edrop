@@ -12,7 +12,7 @@
     <h3>recently eavesdropped:</h3>
     <ul>
     {% for tweet in tweets %}
-      <li>{{ tweet.content|escape }}</li>
+      <li>{{ tweet.content }}</li>
     {% endfor %}
     </ul>
   {% else %}
