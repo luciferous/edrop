@@ -23,12 +23,19 @@ class Fetch(webapp.RequestHandler):
     url = self.request.get('url')
     response = urlfetch.fetch(url)
     if response.status_code == 200 and response.content.startswith("["):
-      Batch(data=response.content).save()
-      taskqueue.Task(url='/run/etl').add('etl')
+      key = Batch(data=response.content).put()
+      if key:
+        taskqueue.Task(
+            url='/run/etl',
+            params={'batch_id': key.id()}
+            ).add('etl')
 
 class ETL(webapp.RequestHandler):
   def post(self):
-    batch = next_batch()
+    id = self.request.get('batch_id')
+    if not id:
+      return
+    batch = Batch.get_by_id(long(id))
     if not batch:
       return
     tweets = edrop.extract_tweets(batch)
