@@ -11,9 +11,12 @@ import edrop
 import os
 import wsgiref.handlers
 import re
+import urllib
 
 class TopicDetail(webapp.RequestHandler):
   def get(self, topic_name):
+    topic_name = urllib.unquote(topic_name)
+    topic_name = topic_name.decode('utf8')
     order = self.request.get("order") or "-created_at"
     topic = edrop.get_topic(topic_name)
 
@@ -48,7 +51,7 @@ class TopicIndex(webapp.RequestHandler):
       topic = edrop.get_topic(topic_name)
       if not topic:
         topic = edrop.create_topic(topic_name)
-      self.redirect('/topics/%s' % topic.name)
+      self.redirect('/topics/%s' % topic.name.encode('utf8'))
     else:
       self.error(400) # Bad request
 
@@ -65,7 +68,7 @@ class Main(webapp.RequestHandler):
   def post(self):
     topic_name = self.request.get('name')
     if topic_name:
-      self.redirect('/topics/%s' % topic_name)
+      self.redirect('/topics/%s' % topic_name.encode('utf8'))
     else:
       self.error(404)
 
