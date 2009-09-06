@@ -45,7 +45,7 @@ def extract_tweets(batch):
 
 def find_topics(tweet):
   topics = []
-  words = re.findall("\w+", tweet.content)
+  words = re.findall("\w+", tweet.content, re.UNICODE)
   for topic_name in set([w.lower() for w in words]):
     topic = get_topic(topic_name)
     if topic:
