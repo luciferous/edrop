@@ -9,6 +9,7 @@ from models import *
 import edrop
 import wsgiref.handlers
 import logging
+import re
 
 class QueueFetch(webapp.RequestHandler):
   def get(self):
@@ -46,13 +47,23 @@ class ETL(webapp.RequestHandler):
       self.error(400)
       return
 
-    tweets = edrop.extract_tweets(batch)
-    ontopic = []
-    for tweet in tweets:
-      topics = edrop.find_topics(tweet)
-      if len(topics) > 0:
-        tweet.topics += [topic.key() for topic in topics]
-        ontopic.append(tweet)
+    ontopic = set()
+    topic_tweets = dict()
+
+    for tweet in edrop.extract_tweets(batch):
+      words = re.findall('\w+', tweet.content, re.UNICODE)
+      for word in map(lambda word: word.lower(), words):
+        topic_key_name = 'key:' + word
+        if not topic_tweets.has_key(topic_key_name):
+          topic_tweets[topic_key_name] = set()
+        topic_tweets[topic_key_name].add(tweet)
+
+    topics = Topic.get_by_key_name(topic_tweets.keys())
+    topics = filter(lambda topic: topic is not None, topics)
+    for topic in topics:
+      for tweet in topic_tweets['key:' + topic.name]:
+        tweet.topics.append(topic.key())
+        ontopic.add(tweet)
 
     batch.delete()
     db.save(ontopic)
