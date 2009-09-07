@@ -51,7 +51,7 @@ class TopicIndex(webapp.RequestHandler):
       topic = edrop.get_topic(topic_name)
       if not topic:
         topic = edrop.create_topic(topic_name)
-      self.redirect('/topics/%s' % topic.name.encode('utf8'))
+      self.redirect('/topics/%s' % urllib.quote(topic.name.encode('utf8')))
     else:
       self.error(400) # Bad request
 
@@ -68,7 +68,7 @@ class Main(webapp.RequestHandler):
   def post(self):
     topic_name = self.request.get('name')
     if topic_name:
-      self.redirect('/topics/%s' % topic_name.encode('utf8'))
+      self.redirect('/topics/%s' % urllib.quote(topic_name.encode('utf8')))
     else:
       self.error(404)
 
