@@ -11,8 +11,8 @@ handlers:
 - url: /run/.*
   script: etl.py
   login: admin
-- url: .*
-  script: main.py
 - url: /remote_api
   script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
   login: admin
+- url: .*
+  script: main.py
