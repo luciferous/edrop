@@ -89,7 +89,7 @@ class ETL(webapp.RequestHandler):
     text = URL_RE.sub('', text)
     text = text.lower()
     words = SPLIT_RE.split(text)
-    words = filter(lambda word: word is not None, words)
+    words = filter(lambda word: word, words)
     lengths = range(1, len(words) + 1)
     ranges = zip(lengths, map(lambda l: range(l), lengths))
     phrases = []
