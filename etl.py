@@ -12,7 +12,7 @@ import logging
 import re
 
 URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
-SPLIT_RE = re.compile(u"""[\s.,"'\u2026]+""", re.UNICODE)
+SPLIT_RE = re.compile(u"""[\s.,"\u2026]+""", re.UNICODE)
 
 class QueueFetch(webapp.RequestHandler):
   def get(self):
