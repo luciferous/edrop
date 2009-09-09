@@ -61,8 +61,18 @@ class ETL(webapp.RequestHandler):
           topic_tweets[topic_key_name] = set()
         topic_tweets[topic_key_name].add(tweet)
 
-    topics = Topic.get_by_key_name(topic_tweets.keys())
-    topics = filter(lambda topic: topic is not None, topics)
+    bucket = []
+    keys = topic_tweets.keys()
+    while keys:
+      bucket.append(keys[:1000])
+      keys = keys[1000:]
+
+    topics = []
+    for keys in bucket:
+      topic_keys = Topic.get_by_key_name(keys)
+      topic_keys = filter(lambda topic: topic is not None, topic_keys)
+      topics += topic_keys
+
     for topic in topics:
       for tweet in topic_tweets['key:' + topic.name]:
         tweet.topics.append(topic.key())
