@@ -26,14 +26,17 @@ class QueueFetch(webapp.RequestHandler):
 class Fetch(webapp.RequestHandler):
   def post(self):
     url = self.request.get('url')
-    response = urlfetch.fetch(url)
-    if response.status_code == 200 and response.content.startswith("["):
-      key = Batch(data=response.content).put()
-      if key:
-        taskqueue.Task(
-            url='/run/etl',
-            params={'batch_id': key.id()}
-            ).add('etl')
+    try:
+      response = urlfetch.fetch(url)
+      if response.status_code == 200 and response.content.startswith("["):
+        key = Batch(data=response.content).put()
+        if key:
+          taskqueue.Task(
+              url='/run/etl',
+              params={'batch_id': key.id()}
+              ).add('etl')
+    except DownloadError:
+      logging.info('Twitter responded too slowly.')
 
 class ETL(webapp.RequestHandler):
   def post(self):
