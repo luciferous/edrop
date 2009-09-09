@@ -11,6 +11,9 @@ import wsgiref.handlers
 import logging
 import re
 
+URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
+SPLIT_RE = re.compile(u"""[\s.,"'\u2026]+""", re.UNICODE)
+
 class QueueFetch(webapp.RequestHandler):
   def get(self):
     url = "http://twitter.com/statuses/public_timeline.json"
@@ -51,9 +54,9 @@ class ETL(webapp.RequestHandler):
     topic_tweets = dict()
 
     for tweet in edrop.extract_tweets(batch):
-      words = re.findall('\w+', tweet.content, re.UNICODE)
-      for word in map(lambda word: word.lower(), words):
-        topic_key_name = 'key:' + word
+      phrases = ETL._possible_phrases(tweet.content)
+      for phrase in phrases:
+        topic_key_name = 'key:' + phrase
         if not topic_tweets.has_key(topic_key_name):
           topic_tweets[topic_key_name] = set()
         topic_tweets[topic_key_name].add(tweet)
@@ -67,6 +70,20 @@ class ETL(webapp.RequestHandler):
 
     batch.delete()
     db.save(ontopic)
+
+  def _possible_phrases(text):
+    urls = URL_RE.findall(text)
+    text = URL_RE.sub('', text)
+    text = text.lower()
+    words = SPLIT_RE.split(text)
+    words = filter(lambda word: word is not None, words)
+    lengths = range(1, len(words) + 1)
+    ranges = zip(lengths, map(lambda l: range(l), lengths))
+    phrases = []
+    for length, starts in ranges:
+      phrases += map(lambda i: ' '.join(words[i:length]), starts)
+    return phrases + urls
+  _possible_phrases = staticmethod(_possible_phrases)
 
 class ExpireCache(webapp.RequestHandler):
   def get(self):

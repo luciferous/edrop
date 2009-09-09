@@ -13,6 +13,7 @@ import logging
 
 DAY_SCALE = 4
 LOCAL_EPOCH = datetime.datetime(2009, 7, 12)
+URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
 
 def extract_tweets(batch):
   dec = decoder.JSONDecoder()
@@ -53,7 +54,9 @@ def find_topics(tweet):
   return topics
 
 def get_topic(name):
-  name = name.lower().strip()
+  name = name.strip()
+  if not URL_RE.match(name):
+    name = name.lower().strip()
   tuple = memcache.get(name, namespace="topic")
   if tuple:
     return tuple[1]
@@ -64,7 +67,9 @@ def get_topic(name):
   return topic
 
 def create_topic(name):
-  name = name.lower().strip()
+  name = name.strip()
+  if not URL_RE.match(name):
+    name = name.lower()
   tuple = memcache.get(name, namespace="topic")
   if tuple and tuple[1]:
     return tuple[1]
