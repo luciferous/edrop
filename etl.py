@@ -2,6 +2,7 @@
 
 from google.appengine.ext import webapp
 from google.appengine.api import urlfetch
+from google.appengine.api import urlfetch_errors
 from google.appengine.api.labs import taskqueue
 
 from models import *
@@ -35,8 +36,8 @@ class Fetch(webapp.RequestHandler):
               url='/run/etl',
               params={'batch_id': key.id()}
               ).add('etl')
-    except DownloadError:
-      logging.info('Twitter responded too slowly.')
+    except urlfetch_errors.DownloadError, e:
+      logging.info("Twitter responded too slowly. %s" % e.message)
 
 class ETL(webapp.RequestHandler):
   def post(self):
