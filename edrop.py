@@ -20,6 +20,9 @@ def extract_tweets(batch):
   feed = dec.decode(batch.data)
   tweets = []
   for item in feed:
+    if item['user']['followers_count'] == 0 or \
+       item['user']['friends_count'] == 0:
+      continue
     try:
       tweet = Tweet(
           key_name="tweet:%d" % (item['id']),
