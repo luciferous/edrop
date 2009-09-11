@@ -8,7 +8,7 @@ handlers:
   static_dir: css
 - url: /js
   static_dir: js
-- url: /run/.*
+- url: /tasks/.*
   script: tasks.py
   login: admin
 - url: /remote_api

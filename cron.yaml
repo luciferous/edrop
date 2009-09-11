@@ -1,4 +1,4 @@
 cron:
 - description: Queue tasks for fetching tweets
-  url: /run/queuefetch
+  url: /tasks/queuefetch
   schedule: every 1 minutes

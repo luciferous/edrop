@@ -19,7 +19,7 @@ class QueueFetch(webapp.RequestHandler):
   def get(self):
     url = "http://twitter.com/statuses/public_timeline.json"
     task = taskqueue.Task(
-        url='/run/fetch',
+        url='/tasks/fetch',
         params={'url': url}
         )
     task.add('fetch')
@@ -33,7 +33,7 @@ class Fetch(webapp.RequestHandler):
         key = Batch(data=response.content).put()
         if key:
           taskqueue.Task(
-              url='/run/etl',
+              url='/tasks/etl',
               params={'batch_id': key.id()}
               ).add('etl')
     except urlfetch_errors.DownloadError, e:
@@ -105,10 +105,10 @@ class ExpireCache(webapp.RequestHandler):
     result = edrop.expire_cache(key)
 
 application = webapp.WSGIApplication([
-  ('/run/queuefetch', QueueFetch),
-  ('/run/fetch', Fetch),
-  ('/run/etl', ETL),
-  ('/run/expirecache', ExpireCache)
+  ('/tasks/queuefetch', QueueFetch),
+  ('/tasks/fetch', Fetch),
+  ('/tasks/etl', ETL),
+  ('/tasks/expirecache', ExpireCache)
 ], debug=True)
 
 def main():
