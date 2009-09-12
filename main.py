@@ -72,11 +72,15 @@ class TopicIndex(webapp.RequestHandler):
       parent = topic
 
     for index in range(len(ancestors[1:])):
-      topic = Topic(
-          key_name='parent:' + ancestors[1:][index],
-          parent=parent,
-          name=' '.join(ancestors[1:][:index + 1]),
-          )
+      topic = Topic.get_by_key_name(
+          'parent:' + ancestors[1:][index],
+          parent=parent)
+      if not topic:
+        topic = Topic(
+            key_name='parent:' + ancestors[1:][index],
+            parent=parent,
+            name=' '.join(ancestors[1:][:index + 1]),
+            )
       topics.append(topic)
       parent = topic
 
