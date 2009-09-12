@@ -14,6 +14,7 @@ import logging
 DAY_SCALE = 4
 LOCAL_EPOCH = datetime.datetime(2009, 7, 12)
 URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
+SPLIT_RE = re.compile(u"""[\s.,"\u2026?]+""", re.UNICODE)
 
 def extract_tweets(batch):
   dec = decoder.JSONDecoder()
@@ -46,45 +47,6 @@ def extract_tweets(batch):
           )
 
   return tweets
-
-def find_topics(tweet):
-  topics = []
-  words = re.findall("\w+", tweet.content, re.UNICODE)
-  for topic_name in set([w.lower() for w in words]):
-    topic = get_topic(topic_name)
-    if topic:
-      topics.append(topic)
-  return topics
-
-def get_topic(name):
-  name = name.strip()
-  if not URL_RE.match(name):
-    name = name.lower().strip()
-  tuple = memcache.get(name, namespace="topic")
-  if tuple:
-    return tuple[1]
-
-  topic = Topic.gql("WHERE name = :1", name).get()
-  memcache.set(name, (name, topic), namespace="topic")
-
-  return topic
-
-def create_topic(name):
-  name = name.strip()
-  if not URL_RE.match(name):
-    name = name.lower()
-  tuple = memcache.get(name, namespace="topic")
-  if tuple and tuple[1]:
-    return tuple[1]
-
-  topic = Topic.get_or_insert(
-      "key:" + name,
-      name=name,
-      user=users.get_current_user()
-      )
-  memcache.set(name, (name, topic), namespace="topic")
-
-  return topic
 
 def expire_cache(key=None):
   if not key:

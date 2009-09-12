@@ -7,18 +7,20 @@ from google.appengine.api import datastore_errors
 
 from models import *
 
-import edrop
 import os
 import wsgiref.handlers
 import re
 import urllib
+import logging
 
 class TopicDetail(webapp.RequestHandler):
   def get(self, topic_name):
     topic_name = urllib.unquote(topic_name)
     topic_name = topic_name.decode('utf8')
     order = self.request.get("order") or "-created_at"
-    topic = edrop.get_topic(topic_name)
+
+    key_name, child, parent = Topic.create_path(topic_name)
+    topic = Topic.get_by_key_name(key_name, parent=parent)
 
     tweets = []
     messages = []
@@ -47,13 +49,50 @@ class TopicIndex(webapp.RequestHandler):
 
   def post(self):
     topic_name = self.request.get('name')
-    if topic_name:
-      topic = edrop.get_topic(topic_name)
-      if not topic:
-        topic = edrop.create_topic(topic_name)
-      self.redirect('/topics/%s' % urllib.quote(topic.name.encode('utf8')))
-    else:
+    topic_name = topic_name.strip()
+
+    if not topic_name or len(topic_name) > 140:
       self.error(400) # Bad request
+      return
+
+    topics = []
+    parent = None
+    tokens = SPLIT_RE.split(topic_name)
+
+    ancestors, child = tokens[:-1], tokens[-1]
+    if ancestors:
+      oldest = ancestors[0]
+      topic = Topic.get_by_key_name('parent:' + oldest)
+      if not topic:
+        topic = Topic(
+          key_name='parent:' + oldest,
+          name=oldest,
+          )
+      topics.append(topic)
+      parent = topic
+
+    for index in range(len(ancestors[1:])):
+      topic = Topic(
+          key_name='parent:' + ancestors[1:][index],
+          parent=parent,
+          name=' '.join(ancestors[1:][:index + 1]),
+          )
+      topics.append(topic)
+      parent = topic
+
+    if topics:
+      parent = topics[-1]
+
+    topic = Topic(
+        key_name='key:' + child,
+        parent=parent,
+        name=' '.join(ancestors + [child])
+        )
+
+    topics.append(topic)
+    db.save(topics)
+
+    self.redirect('/topics/%s' % urllib.quote(topic_name.encode('utf8')))
 
 class Main(webapp.RequestHandler):
   def get(self):

@@ -1,5 +1,85 @@
 #!/usr/bin/env python
 
+"""
+We want to strip branches from the tree that don't match the parent. But to
+do that we need to get_by_key_name which will return a list of topics, or
+None. We can strip away the branches of topics that returned None.
+
+For instance:
+If we have a tweet "all your base are belong to us", the possible phrases
+stripped from that would be:
+
+"all"
+"all your"
+"all your base"
+...
+"belong to us"
+"belong to"
+"belong"
+"to us"
+"us"
+
+If we search the datastore for "all" and it returns None. Then we can strip
+every phrase beginning with "all". If we do this for every topic with a
+child, we can significantly cut down the size of the tree at the cost of
+more datastore calls.
+
+This requires each multi-word topic to be stored in a linked list.
+Currently topics are stored: "key:all your base are belong to us". Since we
+can only call db.get() with multiple Keys and not multiple Queries, we must
+modify how we store topics.
+
+"all your base are belong to us" must be stored as separate topics:
+
+"all"
+"your"
+"base"
+"are"
+"belong"
+"to"
+"us"
+
+"all" must reference "your", "your" must reference "base" and so on.
+
+Because there may be other multi-word topics beginning with "all", the
+cardinality of the relationship between topics is one-to-many.
+We can represent this relationship using the ancestor component in
+datastore, as entities can only have one ancestor. We can also represent
+this relationship using a Reference property, but we will run into some
+trouble as I will describe.
+
+If we set "all" as the ancestor of "your" then we can query "your":
+
+key = Key.from_path('Topic', 'all', 'Topic', 'your')
+Topic.get(key)
+
+>>> <Topic: your>
+
+We can create many keys and query them in one shot:
+
+keys = [Key.from_path..., Key.from_path...]
+Topic.get(keys)
+
+>>> [<Topic...>, <Topic...>]
+
+If we have another phrase containing "base" in the datastore, then we have
+two topics with the same key name. If we are using the ancestor property,
+then we preserve the uniqueness of the key, but if we are using a Reference
+property, we will have to change the key name to differentiate between the
+two topics.
+
+If we create topics for every word in the topic, we may have
+non-interesting topics like "all", "are", "your". One way to get around
+this is to store a property that tells edrop if a topic is just used as a
+parent for another topic. But, that would mean having to go through all the
+results of get() programmatically filtering out topics. Another way to do
+this is to change the key prefix. Currently all keynames are prefixed with
+'key:'. We can change this to 'parent:'. That means we could have topics
+with the same name but different keys in the datastore. Whether this is a
+bad thing is not clear right now.
+
+"""
+
 from google.appengine.ext import webapp
 from google.appengine.api import urlfetch
 from google.appengine.api import urlfetch_errors
@@ -11,6 +91,7 @@ import edrop
 import wsgiref.handlers
 import logging
 import re
+import time
 
 URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
 SPLIT_RE = re.compile(u"""[\s.,"\u2026?]+""", re.UNICODE)
@@ -55,48 +136,94 @@ class ETL(webapp.RequestHandler):
       return
 
     ontopic = set()
-    topic_tweets = dict()
+    topic_tweets = []
+    phrases = dict()
+    tweets = edrop.extract_tweets(batch)
 
-    for tweet in edrop.extract_tweets(batch):
-      phrases = ETL._possible_phrases(tweet.content)
-      for phrase in phrases:
-        topic_key_name = 'key:' + phrase
-        if not topic_tweets.has_key(topic_key_name):
-          topic_tweets[topic_key_name] = set()
-        topic_tweets[topic_key_name].add(tweet)
+    word_tweet = dict()
+    tweet_words = dict()
+    for tweet in tweets:
+      text = tweet.content.lower()
 
-    bucket = []
-    keys = topic_tweets.keys()
-    while keys:
-      bucket.append(keys[:1000])
-      keys = keys[1000:]
+      urls = URL_RE.findall(text)
+      text = URL_RE.sub('', text)
 
-    topics = []
-    for keys in bucket:
-      topic_keys = Topic.get_by_key_name(keys)
-      topic_keys = filter(lambda topic: topic is not None, topic_keys)
-      topics += topic_keys
+      words = SPLIT_RE.split(text)
+      words = filter(lambda word: word, words)
 
-    for topic in topics:
-      for tweet in topic_tweets['key:' + topic.name]:
+      tweet_words[tweet] = words + urls
+
+      for word in set(words):
+        if word not in word_tweet:
+          word_tweet[word] = []
+        word_tweet[word].append(tweet)
+
+    keynames = word_tweet.keys()
+    parents = dict(zip(
+      keynames,
+      Topic.get_by_key_name(map(lambda key: 'parent:' + key, keynames))
+      ))
+
+    solitary = dict(zip(
+      keynames,
+      Topic.get_by_key_name(map(lambda key: 'key:' + key, keynames))
+      ))
+
+    tweets_by_topic = {}
+    keys = []
+
+    for word in keynames:
+      if solitary[word]:
+        tweets_by_topic[word] = word_tweet[word]
+        args = ('Topic', 'key:' + word)
+        keys.append(db.Key.from_path(*args))
+
+      if parents[word]:
+        for tweet in word_tweet[word]:
+          words = tweet_words[tweet]
+          slice = words[words.index(word):]
+          for index in range(len(slice)):
+            pieces = slice[:index + 1]
+            ancestors = []
+            if len(pieces) > 1:
+              ancestors = pieces[:-1]
+            args = zip(
+                ('Topic',) * len(pieces),
+                map(lambda anc: 'parent:' + anc, ancestors) + \
+                    ['key:' + pieces[-1]]
+                )
+            args = sum(args, ())
+            topic_name = ' '.join(pieces)
+            if topic_name not in tweets_by_topic:
+              tweets_by_topic[topic_name] = []
+            tweets_by_topic[topic_name].append(tweet)
+            keys.append(db.Key.from_path(*args))
+
+    for topic in db.get(keys):
+      if not topic:
+        continue
+      tweets = tweets_by_topic[topic.name]
+      for tweet in tweets:
         tweet.topics.append(topic.key())
-        ontopic.add(tweet)
+      ontopic.update(tweets)
 
     batch.delete()
-    db.save(ontopic)
+    db.put(ontopic)
 
-  def _possible_phrases(text):
+  def _possible_phrases(phrases, text):
     urls = URL_RE.findall(text)
     text = URL_RE.sub('', text)
     text = text.lower()
     words = SPLIT_RE.split(text)
     words = filter(lambda word: word, words)
-    lengths = range(1, len(words) + 1)
-    ranges = zip(lengths, map(lambda l: range(l), lengths))
-    phrases = []
-    for length, starts in ranges:
-      phrases += map(lambda i: ' '.join(words[i:length]), starts)
-    return phrases + urls
+
+    for index in range(len(words)):
+      parent = words[index]
+      phrases[parent] = []
+      for offset in range(index + 1, len(words)):
+        phrases[parent].append(' '.join(words[index:offset + 1]))
+    phrases.update(dict(zip(urls, ([],) * len(urls))))
+    return phrases
   _possible_phrases = staticmethod(_possible_phrases)
 
 class ExpireCache(webapp.RequestHandler):

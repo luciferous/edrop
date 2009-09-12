@@ -5,6 +5,11 @@ from django.utils.simplejson import decoder
 
 from datetime import datetime
 
+import re
+
+WORD_RE = re.compile("\w+", re.UNICODE)
+SPLIT_RE = re.compile(u"""[\s.,"\u2026?]+""", re.UNICODE)
+
 class Batch(db.Model):
   data = db.TextProperty()
   created_at = db.DateTimeProperty(auto_now_add=True)
@@ -30,6 +35,19 @@ class Topic(db.Model):
   @property
   def tweets(self):
     return Tweet.all().filter("topics =", self.key())
+
+  def create_path(topic_name):
+    words = SPLIT_RE.split(topic_name.lower())
+    ancestors, child = words[:-1], words[-1:][0]
+    parent = None
+    if ancestors:
+      kinds = ['Topic'] * len(ancestors)
+      ancestor_keys = map(lambda name: 'parent:' + name, ancestors)
+      args = zip(kinds, ancestor_keys)
+      args = sum(args, ()) # Flatten
+      parent = db.Key.from_path(*args)
+    return 'key:' + child, child, parent
+  create_path = staticmethod(create_path)
 
 def next_batch():
   query = Batch.gql("ORDER BY created_at ASC")
