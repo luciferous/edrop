@@ -210,22 +210,6 @@ class ETL(webapp.RequestHandler):
     batch.delete()
     db.put(ontopic)
 
-  def _possible_phrases(phrases, text):
-    urls = URL_RE.findall(text)
-    text = URL_RE.sub('', text)
-    text = text.lower()
-    words = SPLIT_RE.split(text)
-    words = filter(lambda word: word, words)
-
-    for index in range(len(words)):
-      parent = words[index]
-      phrases[parent] = []
-      for offset in range(index + 1, len(words)):
-        phrases[parent].append(' '.join(words[index:offset + 1]))
-    phrases.update(dict(zip(urls, ([],) * len(urls))))
-    return phrases
-  _possible_phrases = staticmethod(_possible_phrases)
-
 class ExpireCache(webapp.RequestHandler):
   def get(self):
     key = self.request.get("key")

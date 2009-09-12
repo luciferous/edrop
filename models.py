@@ -49,10 +49,6 @@ class Topic(db.Model):
     return 'key:' + child, child, parent
   create_path = staticmethod(create_path)
 
-def next_batch():
-  query = Batch.gql("ORDER BY created_at ASC")
-  return query.get()
-
 def parse_created_at(created_at):
   created_at_notz = created_at[:19] + created_at[25:]
   return datetime.strptime(created_at_notz, "%a %b %d %H:%M:%S %Y")
