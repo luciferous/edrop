@@ -135,7 +135,7 @@ class ETL(webapp.RequestHandler):
     ontopic = set()
     topic_tweets = []
     phrases = dict()
-    tweets = edrop.extract_tweets(batch)
+    tweets = Tweet.from_batch(batch)
 
     word_tweet = dict()
     tweet_words = dict()
