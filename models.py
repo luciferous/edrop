@@ -66,6 +66,7 @@ class Topic(db.Model):
       parent = topic
       topics.append(topic)
 
+    topics[-1].name = ' '.join(tokens)
     return topics
   from_tokens = staticmethod(from_tokens)
 
