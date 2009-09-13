@@ -273,13 +273,45 @@ class LinkTweets(webapp.RequestHandler):
     keys = db.put(modified)
     db.delete(oldkey)
 
+class FullName(webapp.RequestHandler):
+  def get(self):
+    key = self.request.get('key')
+    if key:
+      topic = Topic.gql(
+          "WHERE __key__ > :1 ORDER by __key__",
+          db.Key(key)
+          ).get()
+    else:
+      topic = Topic.gql("ORDER by __key__").get()
+
+    if not topic:
+      return
+    parentnames = []
+
+    if topic.parent():
+      current = topic
+      parentnames.append(current.name)
+      while current.parent():
+        parentnames.append(current.parent().name)
+        current = current.parent()
+      parentnames.reverse()
+      topic.name = ' '.join(parentnames)
+      topic.save()
+
+    taskqueue.add(
+        url='/tasks/fullname',
+        params={'key': str(topic.key())},
+        method='GET'
+        )
+
 application = webapp.WSGIApplication([
   ('/tasks/queuefetch', QueueFetch),
   ('/tasks/fetch', Fetch),
   ('/tasks/etl', ETL),
   ('/tasks/expirecache', ExpireCache),
   ('/tasks/converttopics', ConvertTopics),
-  ('/tasks/linktweets', LinkTweets)
+  ('/tasks/linktweets', LinkTweets),
+  ('/tasks/fullname', FullName)
 ], debug=True)
 
 def main():
