@@ -2,6 +2,7 @@
 
 from google.appengine.api import memcache
 from google.appengine.api import users
+from google.appengine.api import datastore_errors
 
 from models import *
 
@@ -41,7 +42,7 @@ def extract_tweets(batch):
           tweet.source_id
           )
       tweets.append(tweet)
-    except BadValueError, e:
+    except datastore_errors.BadValueError, e:
       logging.error("Error saving tweet %d from %s: %s." %
           (item['id'], item['user']['screen_name'], e.message)
           )
