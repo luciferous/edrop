@@ -84,10 +84,10 @@ from google.appengine.ext import webapp
 from google.appengine.api import urlfetch
 from google.appengine.api import urlfetch_errors
 from google.appengine.api.labs import taskqueue
+from google.appengine.api import memcache
 
 from models import *
 
-import edrop
 import wsgiref.handlers
 import logging
 import re
@@ -202,7 +202,10 @@ class ETL(webapp.RequestHandler):
 class ExpireCache(webapp.RequestHandler):
   def get(self):
     key = self.request.get("key")
-    result = edrop.expire_cache(key)
+    if not key:
+      result = memcache.flush_all()
+    else:
+      result = memcache.delete(key, namespace="topic")
 
 class ConvertTopics(webapp.RequestHandler):
   def get(self):
