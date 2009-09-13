@@ -59,41 +59,7 @@ class TopicIndex(webapp.RequestHandler):
     parent = None
     tokens = SPLIT_RE.split(topic_name)
 
-    ancestors, child = tokens[:-1], tokens[-1]
-    if ancestors:
-      oldest = ancestors[0]
-      topic = Topic.get_by_key_name('parent:' + oldest)
-      if not topic:
-        topic = Topic(
-          key_name='parent:' + oldest,
-          name=oldest,
-          )
-      topics.append(topic)
-      parent = topic
-
-    for index in range(len(ancestors[1:])):
-      topic = Topic.get_by_key_name(
-          'parent:' + ancestors[1:][index],
-          parent=parent)
-      if not topic:
-        topic = Topic(
-            key_name='parent:' + ancestors[1:][index],
-            parent=parent,
-            name=' '.join(ancestors[1:][:index + 1]),
-            )
-      topics.append(topic)
-      parent = topic
-
-    if topics:
-      parent = topics[-1]
-
-    topic = Topic(
-        key_name='key:' + child,
-        parent=parent,
-        name=' '.join(ancestors + [child])
-        )
-
-    topics.append(topic)
+    topics = Topic.from_tokens(tokens)
     db.save(topics)
 
     self.redirect('/topics/%s' % urllib.quote(topic_name.encode('utf8')))
