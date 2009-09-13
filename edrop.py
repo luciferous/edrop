@@ -14,8 +14,6 @@ import logging
 
 DAY_SCALE = 4
 LOCAL_EPOCH = datetime.datetime(2009, 7, 12)
-URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
-SPLIT_RE = re.compile(u"""[\s.,"\u2026?]+""", re.UNICODE)
 
 def extract_tweets(batch):
   dec = decoder.JSONDecoder()

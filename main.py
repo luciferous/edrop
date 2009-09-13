@@ -57,7 +57,7 @@ class TopicIndex(webapp.RequestHandler):
 
     topics = []
     parent = None
-    tokens = SPLIT_RE.split(topic_name)
+    tokens = Topic.tokenize(topic_name)
 
     topics = Topic.from_tokens(tokens)
     db.save(topics)

@@ -93,9 +93,6 @@ import logging
 import re
 import time
 
-URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
-SPLIT_RE = re.compile(u"""[\s.,"\u2026?]+""", re.UNICODE)
-
 class QueueFetch(webapp.RequestHandler):
   def get(self):
     url = "http://twitter.com/statuses/public_timeline.json"
@@ -143,17 +140,9 @@ class ETL(webapp.RequestHandler):
     word_tweet = dict()
     tweet_words = dict()
     for tweet in tweets:
-      text = tweet.content.lower()
+      tweet_words[tweet] = Topic.tokenize(tweet.content)
 
-      urls = URL_RE.findall(text)
-      text = URL_RE.sub('', text)
-
-      words = SPLIT_RE.split(text)
-      words = filter(lambda word: word, words)
-
-      tweet_words[tweet] = words + urls
-
-      for word in set(words):
+      for word in set(tweet_words[tweet]):
         if word not in word_tweet:
           word_tweet[word] = []
         word_tweet[word].append(tweet)
@@ -229,7 +218,7 @@ class ConvertTopics(webapp.RequestHandler):
     if not topic:
       return
 
-    tokens = SPLIT_RE.split(topic.name)
+    tokens = Topic.tokenize(topic.name)
     if len(tokens) > 1:
       topics = Topic.from_tokens(tokens, created_at=topic.created_at)
       keys = db.put(topics)

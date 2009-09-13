@@ -8,7 +8,7 @@ from datetime import datetime
 import re
 import operator
 
-WORD_RE = re.compile("\w+", re.UNICODE)
+URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
 SPLIT_RE = re.compile(u"""[\s.,"\u2026?]+""", re.UNICODE)
 
 class Batch(db.Model):
@@ -38,7 +38,7 @@ class Topic(db.Model):
     return Tweet.all().filter("topics =", self.key())
 
   def create_path(topic_name):
-    words = SPLIT_RE.split(topic_name.lower())
+    words = Topic.tokenize(topic_name)
     ancestors, child = words[:-1], words[-1:][0]
     parent = None
     if ancestors:
@@ -70,6 +70,15 @@ class Topic(db.Model):
     return topics
   from_tokens = staticmethod(from_tokens)
 
+  def tokenize(phrase):
+    phrase = phrase.lower()
+    urls = URL_RE.findall(phrase)
+    phrase = URL_RE.sub('', phrase)
+
+    words = SPLIT_RE.split(phrase)
+    words = filter(lambda word: word, words)
+    return words + urls
+  tokenize = staticmethod(tokenize)
 
 def parse_created_at(created_at):
   created_at_notz = created_at[:19] + created_at[25:]
