@@ -132,66 +132,50 @@ class ETL(webapp.RequestHandler):
       self.error(400)
       return
 
-    ontopic = set()
-    topic_tweets = []
-    phrases = dict()
+    tweets_by_word = {}
+    words_in_tweet = {}
     tweets = Tweet.from_batch(batch)
 
-    word_tweet = dict()
-    tweet_words = dict()
     for tweet in tweets:
-      tweet_words[tweet] = Topic.tokenize(tweet.content)
+      words_in_tweet[tweet] = Topic.tokenize(tweet.content)
+      for word in set(words_in_tweet[tweet]):
+        if word not in tweets_by_word:
+          tweets_by_word[word] = []
+        tweets_by_word[word].append(tweet)
 
-      for word in set(tweet_words[tweet]):
-        if word not in word_tweet:
-          word_tweet[word] = []
-        word_tweet[word].append(tweet)
-
-    keynames = word_tweet.keys()
-    parents = dict(zip(
-      keynames,
-      Topic.get_by_key_name(map(lambda key: 'parent:' + key, keynames))
-      ))
-
-    solitary = dict(zip(
-      keynames,
-      Topic.get_by_key_name(map(lambda key: 'key:' + key, keynames))
-      ))
-
-    tweets_by_topic = {}
+    words = tweets_by_word.keys()
+    parenttopics = Topic.get_by_key_name(['parent:' + word for word in words])
+    begins_a_phrase = dict(zip(words, parenttopics))
     keys = []
+    for word in words:
+      keys.append(db.Key.from_path(*Topic.create_path([word])))
 
-    for word in keynames:
-      if solitary[word]:
-        tweets_by_topic[word] = word_tweet[word]
-        args = ('Topic', 'key:' + word)
-        keys.append(db.Key.from_path(*args))
-
-      if parents[word]:
-        for tweet in word_tweet[word]:
-          words = tweet_words[tweet]
-          slice = words[words.index(word):]
-          for index in range(len(slice)):
-            pieces = slice[:index + 1]
-            ancestors = []
-            if len(pieces) > 1:
-              ancestors = pieces[:-1]
-            args = zip(
-                ('Topic',) * len(pieces),
-                map(lambda anc: 'parent:' + anc, ancestors) + \
-                    ['key:' + pieces[-1]]
-                )
-            args = sum(args, ())
-            topic_name = ' '.join(pieces)
-            if topic_name not in tweets_by_topic:
-              tweets_by_topic[topic_name] = []
-            tweets_by_topic[topic_name].append(tweet)
-            keys.append(db.Key.from_path(*args))
-
-    for topic in db.get(keys):
-      if not topic:
+      if not begins_a_phrase[word]:
         continue
-      tweets = tweets_by_topic[topic.name]
+
+      memo = {}
+      tweets = tweets_by_word[word]
+      for tweet in tweets:
+        start = words_in_tweet[tweet].index(word)
+        slice = words_in_tweet[tweet][start:]
+        for index in range(len(slice)):
+          if index == 0:
+            continue
+          pieces = slice[:index + 1]
+          path = Topic.create_path(pieces)
+          keys.append(db.Key.from_path(*path))
+
+          topic_name = ' '.join(pieces)
+
+          if topic_name not in memo:
+            memo[topic_name] = []
+          memo[topic_name].append(tweet)
+
+        tweets_by_word.update(memo)
+
+    ontopic = set()
+    for topic in [topic for topic in Topic.get(keys) if topic]:
+      tweets = tweets_by_word[topic.name]
       for tweet in tweets:
         tweet.topics.append(topic.key())
       ontopic.update(tweets)
