@@ -75,17 +75,11 @@ class Topic(db.Model):
   def tweets(self):
     return Tweet.all().filter("topics =", self.key())
 
-  def create_path(topic_name):
-    words = Topic.tokenize(topic_name)
-    ancestors, child = words[:-1], words[-1:][0]
-    parent = None
-    if ancestors:
-      kinds = ['Topic'] * len(ancestors)
-      ancestor_keys = map(lambda name: 'parent:' + name, ancestors)
-      args = zip(kinds, ancestor_keys)
-      args = sum(args, ()) # Flatten
-      parent = db.Key.from_path(*args)
-    return 'key:' + child, child, parent
+  def create_path(tokens):
+    parentcount = len(tokens) - 1
+    prefixes = parentcount * ('parent:',) + ('key:',)
+    keynames = map(operator.add, prefixes, tokens)
+    return sum(zip(len(tokens) * ('Topic',), keynames), ())
   create_path = staticmethod(create_path)
 
   def from_tokens(tokens, **kwargs):

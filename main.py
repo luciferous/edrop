@@ -19,8 +19,9 @@ class TopicDetail(webapp.RequestHandler):
     topic_name = topic_name.decode('utf8')
     order = self.request.get("order") or "-created_at"
 
-    key_name, child, parent = Topic.create_path(topic_name)
-    topic = Topic.get_by_key_name(key_name, parent=parent)
+    tokens = Topic.tokenize(topic_name)
+    path = Topic.create_path(tokens)
+    topic = Topic.get(db.Key.from_path(*path))
 
     tweets = []
     messages = []
@@ -40,6 +41,7 @@ class TopicDetail(webapp.RequestHandler):
         'topic': topic,
         'request_path': self.request.path
         }
+
     path = os.path.join(os.path.dirname(__file__), 'templates/show.html')
     self.response.out.write(template.render(path, template_values))
 
