@@ -14,7 +14,7 @@ DAY_SCALE = 4
 LOCAL_EPOCH = datetime(2009, 7, 12)
 
 URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
-SPLIT_RE = re.compile(u"""[\s.,"\u2026?]+""", re.UNICODE)
+SPLIT_RE = re.compile(u"""[\s.,"\u2026\u3001\u3002?]+""", re.UNICODE)
 
 class Batch(db.Model):
   data = db.TextProperty()
