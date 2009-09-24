@@ -94,10 +94,38 @@ class Main(webapp.RequestHandler):
     else:
       self.error(404)
 
+class SettingsHandler(webapp.RequestHandler):
+  """Handles requests to set settings."""
+
+  def get(self, name):
+    """Displays a form for setting."""
+    setting = Settings.get_by_key_name('key:' + name)
+    current_value = ""
+    if setting:
+      current_value = setting.value
+    self.response.out.write("""<html><body>
+        <form action="%s" method="POST">
+          %s: <input name="value" type="text" size="20" value="%s">
+          <input type="submit" value="Update">
+        </form>
+      </body>
+    </html>""" % (self.request.path, name, current_value))
+
+  def post(self, name):
+    """Records a value for the setting."""
+    setting = Settings(
+        key_name='key:' + name,
+        value=self.request.get('value')
+        ).put()
+    if setting:
+      logging.info("Setting %s changed.")
+      self.redirect(self.request.path)
+
 application = webapp.WSGIApplication([
   ('/', Main),
   ('/topics/', TopicIndex),
-  ('/topics/(.+)', TopicDetail)
+  ('/topics/(.+)', TopicDetail),
+  ('/settings/(\w+)', SettingsHandler),
 ], debug=True)
 
 def main():
