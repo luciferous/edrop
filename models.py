@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Model classes and utility functions."""
+
 from google.appengine.ext import db
 from django.utils.simplejson import decoder
 from google.appengine.api import datastore_errors
@@ -17,10 +19,27 @@ URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
 SPLIT_RE = re.compile(u"""[\s.,"\u2026\u3001\u3002?]+""", re.UNICODE)
 
 class Batch(db.Model):
+  """Represents the JSON string from the Twitter public timeline.
+
+  Properties
+    data: JSON from the public timeline.
+    created_at: Timestamp for this batch.
+  """
   data = db.TextProperty()
   created_at = db.DateTimeProperty(auto_now_add=True)
 
 class Tweet(db.Model):
+  """Represents a Tweet.
+
+  Properties
+    content: Text content of the tweet.
+    created_at: When Twitter created the Tweet.
+    pic_url: Link to the author's profile picture.
+    source_id: Tweet ID in Twitter.
+    topics: Topics associated with this Tweet.
+    influence: A calculated score based on the number of followers and when
+      the Tweet was added.
+  """
   content = db.StringProperty(multiline=True)
   created_at = db.DateTimeProperty()
   pic_url = db.LinkProperty()
@@ -30,9 +49,21 @@ class Tweet(db.Model):
   influence = db.StringProperty()
 
   def source_url(self):
+    """Returns the URL of the Tweet.
+
+    Returns
+      A link to the Tweet based on the ID and author.
+    """
     return "http://twitter.com/%s/statuses/%s" % (self.author, self.source_id)
 
   def from_batch(batch):
+    """Return a list of Tweets from a Batch.
+
+    Parameters
+      batch: A Batch object.
+    Returns
+      A list of Tweets converted from items in the Batch.
+    """
     dec = decoder.JSONDecoder()
     feed = dec.decode(batch.data)
     tweets = []
@@ -66,6 +97,15 @@ class Tweet(db.Model):
   from_batch = staticmethod(from_batch)
 
 class Topic(db.Model):
+  """A Topic which users can introduce to e-drop, and which Tweets can be
+  associated with.
+
+  Properties
+    name: Name of the topic.
+    created_at: When the topic was created.
+    creator: The User who created the topic. Can be None.
+    score: A ranking property, yet unused.
+  """
   name = db.StringProperty()
   created_at = db.DateTimeProperty(auto_now_add=True)
   creator = db.UserProperty()
@@ -73,9 +113,24 @@ class Topic(db.Model):
 
   @property
   def tweets(self):
+    """Returns Tweets associated with this topic.
+
+    Returns
+      A list of Tweets.
+    """
     return Tweet.all().filter("topics =", self.key())
 
   def create_path(tokens):
+    """Static method which creates a tuple representing the path from a root
+    topic to a leaf. For example, the multiword topic "hello world", when
+    converted to a path, becomes a tree with a root "hello" and child "world".
+    This path is represented in the tuple ("Topic", "hello", "Topic", "world").
+
+    Parameters
+      tokens: List of words in the topic. Can be just one word.
+    Returns
+      A tuple representing the path.
+    """
     parentcount = len(tokens) - 1
     prefixes = parentcount * ('parent:',) + ('key:',)
     keynames = map(operator.add, prefixes, tokens)
@@ -83,6 +138,14 @@ class Topic(db.Model):
   create_path = staticmethod(create_path)
 
   def from_tokens(tokens, **kwargs):
+    """Builds a Topic from a list of words. A topic which has many words is
+    stored as a tree of single words tokenized from the topic.
+
+    Parameters
+      tokens: The topic as a list of words.
+    Returns
+      The Topic object with parent set from the list of words.
+    """
     parentcount = len(tokens) - 1
     prefixes = parentcount * ('parent:',) + ('key:',)
     keynames = map(operator.add, prefixes, tokens)
@@ -103,6 +166,13 @@ class Topic(db.Model):
   from_tokens = staticmethod(from_tokens)
 
   def tokenize(phrase):
+    """Tokenizes the phrase.
+
+    Parameters
+      phrase: One or more words.
+    Returns
+      List of words.
+    """
     phrase = phrase.lower()
     urls = URL_RE.findall(phrase)
     phrase = URL_RE.sub('', phrase)
@@ -113,5 +183,12 @@ class Topic(db.Model):
   tokenize = staticmethod(tokenize)
 
 def parse_created_at(created_at):
+  """Takes a date string and parses it to a DateTime object.
+
+  Parameters
+    created_at: String representation of a date.
+  Returns
+    DateTime object.
+  """
   created_at_notz = created_at[:19] + created_at[25:]
   return datetime.strptime(created_at_notz, "%a %b %d %H:%M:%S %Y")

@@ -1,84 +1,6 @@
 #!/usr/bin/env python
 
-"""
-We want to strip branches from the tree that don't match the parent. But to
-do that we need to get_by_key_name which will return a list of topics, or
-None. We can strip away the branches of topics that returned None.
-
-For instance:
-If we have a tweet "all your base are belong to us", the possible phrases
-stripped from that would be:
-
-"all"
-"all your"
-"all your base"
-...
-"belong to us"
-"belong to"
-"belong"
-"to us"
-"us"
-
-If we search the datastore for "all" and it returns None. Then we can strip
-every phrase beginning with "all". If we do this for every topic with a
-child, we can significantly cut down the size of the tree at the cost of
-more datastore calls.
-
-This requires each multi-word topic to be stored in a linked list.
-Currently topics are stored: "key:all your base are belong to us". Since we
-can only call db.get() with multiple Keys and not multiple Queries, we must
-modify how we store topics.
-
-"all your base are belong to us" must be stored as separate topics:
-
-"all"
-"your"
-"base"
-"are"
-"belong"
-"to"
-"us"
-
-"all" must reference "your", "your" must reference "base" and so on.
-
-Because there may be other multi-word topics beginning with "all", the
-cardinality of the relationship between topics is one-to-many.
-We can represent this relationship using the ancestor component in
-datastore, as entities can only have one ancestor. We can also represent
-this relationship using a Reference property, but we will run into some
-trouble as I will describe.
-
-If we set "all" as the ancestor of "your" then we can query "your":
-
-key = Key.from_path('Topic', 'all', 'Topic', 'your')
-Topic.get(key)
-
->>> <Topic: your>
-
-We can create many keys and query them in one shot:
-
-keys = [Key.from_path..., Key.from_path...]
-Topic.get(keys)
-
->>> [<Topic...>, <Topic...>]
-
-If we have another phrase containing "base" in the datastore, then we have
-two topics with the same key name. If we are using the ancestor property,
-then we preserve the uniqueness of the key, but if we are using a Reference
-property, we will have to change the key name to differentiate between the
-two topics.
-
-If we create topics for every word in the topic, we may have
-non-interesting topics like "all", "are", "your". One way to get around
-this is to store a property that tells edrop if a topic is just used as a
-parent for another topic. But, that would mean having to go through all the
-results of get() programmatically filtering out topics. Another way to do
-this is to change the key prefix. Currently all keynames are prefixed with
-'key:'. We can change this to 'parent:'. That means we could have topics
-with the same name but different keys in the datastore. Whether this is a
-bad thing is not clear right now.
-
-"""
+"""Handlers for background and administrative tasks."""
 
 from google.appengine.ext import webapp
 from google.appengine.api import urlfetch
@@ -94,7 +16,10 @@ import re
 import time
 
 class QueueFetch(webapp.RequestHandler):
+  """Puts a task on the fetch queue."""
+
   def get(self):
+    """Called by cron to queue a download of the public timeline."""
     url = "http://twitter.com/statuses/public_timeline.json"
     task = taskqueue.Task(
         url='/tasks/fetch',
@@ -103,7 +28,12 @@ class QueueFetch(webapp.RequestHandler):
     task.add('fetch')
 
 class Fetch(webapp.RequestHandler):
+  """Handles requests to download the public timeline."""
+
   def post(self):
+    """Downloads the public timeline, creates a Batch from it, stores the Batch
+    to the database, and creates a task to process the Batch created.
+    """
     url = self.request.get('url')
     try:
       response = urlfetch.fetch(url)
@@ -118,7 +48,16 @@ class Fetch(webapp.RequestHandler):
       logging.info("Twitter responded too slowly. %s" % e.message)
 
 class ETL(webapp.RequestHandler):
+  """Handles request to process Batches."""
+
   def post(self):
+    """Converts Batches to Tweets, and associates Tweets with Topics.
+
+    The strategy used for associating Tweets and Topics is to build a list of
+    possible topics for each Tweet. It's useful to think of this process in two
+    parts: the first concerns itself with topics that are a single word,
+    and the second, with topics comprising multiple words.
+    """
     try:
       id = self.request.get('batch_id')
       batch = Batch.get_by_id(long(id))

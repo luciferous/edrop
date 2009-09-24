@@ -14,7 +14,10 @@ import urllib
 import logging
 
 class TopicDetail(webapp.RequestHandler):
+  """Handles list of tweets in a topic."""
+
   def get(self, topic_name):
+    """Retrieve an HTML page of tweets."""
     topic_name = urllib.unquote(topic_name)
     topic_name = topic_name.decode('utf8')
     order = self.request.get("order") or "-created_at"
@@ -46,10 +49,14 @@ class TopicDetail(webapp.RequestHandler):
     self.response.out.write(template.render(path, template_values))
 
 class TopicIndex(webapp.RequestHandler):
+  """Handles request to create topics."""
+
   def get(self):
+    """TODO: show an index of topics."""
     self.error(404) # Nothing here yet
 
   def post(self):
+    """Add a new topic."""
     topic_name = self.request.get('name')
     topic_name = topic_name.strip()
 
@@ -67,7 +74,10 @@ class TopicIndex(webapp.RequestHandler):
     self.redirect('/topics/%s' % urllib.quote(topic_name.encode('utf8')))
 
 class Main(webapp.RequestHandler):
+  """Handles the front page and search functionality."""
+
   def get(self):
+    """Retrieve HTML for a search form and most recent tweets."""
     tweets = Tweet.all().order("-created_at").fetch(5)
     template_values = {
         'title': 'edrop',
@@ -77,6 +87,7 @@ class Main(webapp.RequestHandler):
     self.response.out.write(template.render(path, template_values))
 
   def post(self):
+    """Redirects the search term to the appropriate topic URL."""
     topic_name = self.request.get('name')
     if topic_name:
       self.redirect('/topics/%s' % urllib.quote(topic_name.encode('utf8')))
