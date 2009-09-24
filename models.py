@@ -182,6 +182,9 @@ class Topic(db.Model):
     return words + urls
   tokenize = staticmethod(tokenize)
 
+class Settings(db.Model):
+  value = db.StringProperty(required=True)
+
 def parse_created_at(created_at):
   """Takes a date string and parses it to a DateTime object.
 
