@@ -4,6 +4,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 from google.appengine.api import datastore_errors
+from django.utils import simplejson
 
 from models import *
 
@@ -16,7 +17,7 @@ import logging
 class TopicDetail(webapp.RequestHandler):
   """Handles list of tweets in a topic."""
 
-  def get(self, topic_name):
+  def get(self, topic_name, format='html'):
     """Retrieve an HTML page of tweets."""
     topic_name = urllib.unquote(topic_name)
     topic_name = topic_name.decode('utf8')
@@ -45,8 +46,34 @@ class TopicDetail(webapp.RequestHandler):
         'request_path': self.request.path
         }
 
-    path = os.path.join(os.path.dirname(__file__), 'templates/show.html')
-    self.response.out.write(template.render(path, template_values))
+    def render_html(template_values):
+      path = os.path.join(os.path.dirname(__file__), 'templates/show.html')
+      return template.render(path, template_values)
+
+    def render_json(template_values):
+      self.response.headers['Content-Type'] = 'text/javascript'
+      items = []
+      for tweet in template_values['tweets']:
+        item = {}
+        items.append(item)
+        for property in tweet.properties():
+          if property in ['topics', 'influence']:
+            continue
+          item[property] = unicode(getattr(tweet, property))
+      return simplejson.dumps(items)
+
+    def render_xml(template_values):
+      self.response.headers['Content-Type'] = 'application/atom+xml'
+      path = os.path.join(os.path.dirname(__file__), 'templates/show.atom')
+      return template.render(path, template_values)
+
+    formats = {
+        'html': render_html,
+        'json': render_json,
+        'xml': render_xml,
+        }
+
+    self.response.out.write(formats[format](template_values))
 
 class TopicIndex(webapp.RequestHandler):
   """Handles request to create topics."""
@@ -124,6 +151,7 @@ class SettingsHandler(webapp.RequestHandler):
 application = webapp.WSGIApplication([
   ('/', Main),
   ('/topics/', TopicIndex),
+  ('/topics/(.+)\.(\w+)', TopicDetail),
   ('/topics/(.+)', TopicDetail),
   ('/settings/(\w+)', SettingsHandler),
 ], debug=True)

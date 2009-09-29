@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+  <channel>
+    <title>{{ topic.name }}</title>
+    <link>http://e-drop.appspot.com{{ request_path }}</link>
+    <atom:link type="application/rss+xml"
+      href="http://e-drop.appspot.com/topics/{{ request_path }}.rss" rel="self"/>
+    <description>What people are saying about {{ topic.name }}!</description>
+    <language>en-us</language>
+    <ttl>40</ttl>
+  {% for tweet in tweets %}
+  <item>
+    <title>{{ tweet.author }}: {{ tweet.content }}</title>
+    <description>{{ tweet.author }}: {{ tweet.content }}</description>
+    <pubDate>{{ tweet.created_at|date:"r"}}</pubDate>
+    <guid>{{ tweet.source_url }}</guid>
+    <link>{{ tweet.source_url }}</link>
+  </item>
+  {% endfor %}
+  </channel>
+</rss>
