@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
   <channel>
-    <title>{{ topic.name }}</title>
+    <title>{{ topic.name|escape }}</title>
     <link>http://e-drop.appspot.com{{ request_path }}</link>
     <atom:link type="application/rss+xml"
-      href="http://e-drop.appspot.com/topics/{{ request_path }}.rss" rel="self"/>
-    <description>What people are saying about {{ topic.name }}!</description>
+      href="http://e-drop.appspot.com{{ request_path }}" rel="self"/>
+    <description>What people are saying about {{ topic.name|escape }}!</description>
     <language>en-us</language>
     <ttl>40</ttl>
   {% for tweet in tweets %}

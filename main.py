@@ -51,6 +51,9 @@ class TopicDetail(webapp.RequestHandler):
       return template.render(path, template_values)
 
     def render_json(template_values):
+      if template_values['topic'] is None:
+        self.error(404)
+        return
       self.response.headers['Content-Type'] = 'text/javascript'
       items = []
       for tweet in template_values['tweets']:
@@ -63,15 +66,22 @@ class TopicDetail(webapp.RequestHandler):
       return simplejson.dumps(items)
 
     def render_xml(template_values):
-      self.response.headers['Content-Type'] = 'application/atom+xml'
-      path = os.path.join(os.path.dirname(__file__), 'templates/show.atom')
+      if template_values['topic'] is None:
+        self.error(404)
+        return
+      self.response.headers['Content-Type'] = 'application/rss+xml'
+      path = os.path.join(os.path.dirname(__file__), 'templates/show.rss')
       return template.render(path, template_values)
 
     formats = {
         'html': render_html,
         'json': render_json,
-        'xml': render_xml,
+        'rss': render_xml,
         }
+
+    if format not in formats:
+      self.error(404)
+      return
 
     self.response.out.write(formats[format](template_values))
 

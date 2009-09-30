@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block header %}
+  {% if topic %}
+    <link rel="alternate" type="application/rss+xml" title="{{ topic.name|escape }} (RSS)" href="http://e-drop.appspot.com{{ request_path}}.rss"/>
+  {% endif %}
+{% endblock header %}
+
 {% block content %}
   {% if topic %}
     {% if tweets %}
