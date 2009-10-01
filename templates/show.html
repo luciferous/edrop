@@ -20,22 +20,36 @@
 
       $(function() {
         $("abbr[class*=timeago]").timeago();
-        timeAlive = $.timeago($("#topic-created-at")).slice(0, -3)
+        var timeAlive = $.timeago($("#topic-created-at")).slice(0, -3)
         $("#topic-created-at").before("for " + timeAlive)
 
-        window.setInterval(function() {
-          $.getJSON(document.location.href + ".json",
-            function(data) {
-              first = $.filename($("#tweets .meta a").eq(0).attr("href"))
-              if (data.length > 0 && data[0].source_id == first) return;
-              $.each(data.reverse(), function(i, item) {
-                tweetHTML = $.tpl("tweet", item, true);
-                el = $(tweetHTML)
-                el.prependTo("#tweets");
-                el.find("abbr[class*=timeago]").timeago()
+        var display = function(items) {
+          var item = items.pop();
+          if (item == null) return;
+
+          var tweetHTML = $.tpl("tweet", item, true);
+          var el = $(tweetHTML).css( { display:"none", opacity:0 } ).prependTo("#tweets");
+          el.find("abbr[class*=timeago]").timeago();
+          el.slideDown("slow", function() {
+              $(this).animate( { opacity: 1 }, "slow",
+                    function() { display(items); });
               });
+        };
+
+        window.setInterval(function() {
+          $.getJSON(document.location.href + ".json", function(data) {
+              if (data.length < 1) return;
+              var href = $("#tweets .meta a").eq(0).attr("href");
+              var head = (href == null) ? null : $.filename(href);
+              var index = data.length - 1;
+              while (index >= 0) {
+                if (data[index].source_id == head) break;
+                index--;
+              }
+              if (head == null) $("#tweets p:last").fadeOut();
+              display(data.slice(0, (index == -1 ? data.length : index)));
             });
-        }, 20000);
+        }, 60000);
       });
     </script>
   {% endif %}
