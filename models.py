@@ -11,6 +11,7 @@ from datetime import datetime
 import re
 import operator
 import math
+import logging
 
 DAY_SCALE = 4
 LOCAL_EPOCH = datetime(2009, 7, 12)
