@@ -68,7 +68,6 @@ class ETL(webapp.RequestHandler):
 
     if not batch:
       logging.warning("Batch not found %s." % id)
-      self.error(400)
       return
 
     tweets_by_word = {}
