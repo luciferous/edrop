@@ -27,6 +27,10 @@
           var item = items.pop();
           if (item == null) return;
 
+          if ($("#tweets .tweet").size() > 9) {
+            $("#tweets .tweet:last").fadeOut("slow", function() { $(this).remove(); });
+          }
+
           var tweetHTML = $.tpl("tweet", item, true);
           var el = $(tweetHTML).css( { display:"none", opacity:0 } ).prependTo("#tweets");
           el.find("abbr[class*=timeago]").timeago();
