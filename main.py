@@ -54,7 +54,7 @@ class TopicDetail(webapp.RequestHandler):
       if template_values['topic'] is None:
         self.error(404)
         return
-      self.response.headers['Content-Type'] = 'text/javascript'
+      self.response.headers['Content-Type'] = 'application/json'
       items = []
       for tweet in template_values['tweets']:
         item = {}
@@ -62,7 +62,11 @@ class TopicDetail(webapp.RequestHandler):
         for property in tweet.properties():
           if property in ['topics', 'influence']:
             continue
-          item[property] = unicode(getattr(tweet, property))
+          if 'created_at' == property:
+            item[property] = tweet.created_at.isoformat() + 'Z'
+          else:
+            item[property] = unicode(getattr(tweet, property))
+        item['source_url'] = tweet.source_url()
       return simplejson.dumps(items)
 
     def render_xml(template_values):

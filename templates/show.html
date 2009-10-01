@@ -3,6 +3,41 @@
 {% block header %}
   {% if topic %}
     <link rel="alternate" type="application/rss+xml" title="{{ topic.name|escape }} (RSS)" href="http://e-drop.appspot.com{{ request_path}}.rss"/>
+
+    <script type="text/javascript">
+      $.tpl("tweet", [
+        '<div class="tweet">',
+          '<img src="{pic_url}" alt="Picture of {author}"',
+               'height="48" width="48"/>',
+          '<span class="content">{content}</span>',
+          '<div class="meta">',
+            '<span class="author">{author}</span>',
+            '<abbr class="timeago" title="{created_at}">{created_at}</abbr>',
+            '<a href="{source_url}">View original</a>',
+          '</div>',
+        '</div>',
+        ]);
+
+      $(function() {
+        $("abbr[class*=timeago]").timeago();
+        timeAlive = $.timeago($("#topic-created-at")).slice(0, -3)
+        $("#topic-created-at").before("for " + timeAlive)
+
+        window.setInterval(function() {
+          $.getJSON(document.location.href + ".json",
+            function(data) {
+              first = $.filename($("#tweets .meta a").eq(0).attr("href"))
+              if (data.length > 0 && data[0].source_id == first) return;
+              $.each(data.reverse(), function(i, item) {
+                tweetHTML = $.tpl("tweet", item, true);
+                el = $(tweetHTML)
+                el.prependTo("#tweets");
+                el.find("abbr[class*=timeago]").timeago()
+              });
+            });
+        }, 20000);
+      });
+    </script>
   {% endif %}
 {% endblock header %}
 
@@ -12,9 +47,14 @@
 
       <span class="left">Sort tweets by:</span><ul id="sort-menu">
         <li><a href="{{ request_path }}">Most recent</a></li>
-        <li><a href="{{ request_path }}?&amp;order=-influence"
-          >Most influence</a></li>
+        <li><a href="{{ request_path }}?order=-influence"
+          >Most influential</a></li>
       </ul>
+    {% endif %}
+
+    <div id="tweets">
+
+    {% if tweets %}
 
       {% for tweet in tweets %}
         <div class="tweet">
@@ -23,22 +63,28 @@
           <span class="content">{{ tweet.content|urlize }}</span>
           <div class="meta">
             <span class="author">{{ tweet.author }}</span>
-            <span class="submitted">{{ tweet.created_at|timesince }} ago</span>
+            <abbr class="timeago"
+                  title="{{ tweet.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+              >{{ tweet.created_at|date:"Y-m-d H:i:s" }}</abbr>
             <a href="{{ tweet.source_url }}">View original</a>
           </div>
         </div>
       {% endfor %}
 
-      <p>{{ topic.name }} has remained interesting for
-      {{ topic.created_at|timesince }} since
-      {{ topic.created_at|date:"d M Y" }}.</p>
+      <p>{{ topic.name }} has remained interesting <span id="topic-created-at"
+        title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+        >since {{ topic.created_at|date:"M d Y, g:iA" }}</span>.</p>
 
     {% else %}
 
       <p>Nobody has talked about <strong>{{ topic.name|escape }}</strong> since
-      we started eavesdropping {{ topic.created_at|timesince }} ago.</p>
+      we started eavesdropping <abbr class="timeago"
+        title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+        > on {{ topic.created_at|date:"M d Y, g:iA" }}</abbr>.</p>
 
     {% endif %}
+
+    </div>
 
   {% else %}
 
