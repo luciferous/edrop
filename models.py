@@ -147,6 +147,9 @@ class Topic(db.Model):
     Returns
       The Topic object with parent set from the list of words.
     """
+    if isinstance(tokens, str):
+      tokens = [tokens]
+
     parentcount = len(tokens) - 1
     prefixes = parentcount * ('parent:',) + ('key:',)
     keynames = map(operator.add, prefixes, tokens)
