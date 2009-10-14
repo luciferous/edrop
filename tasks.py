@@ -94,20 +94,23 @@ class ETL(webapp.RequestHandler):
       memo = {}
       tweets = tweets_by_word[word]
       for tweet in tweets:
-        start = words_in_tweet[tweet].index(word)
-        slice = words_in_tweet[tweet][start:]
-        for index in range(len(slice)):
-          if index == 0:
-            continue
-          pieces = slice[:index + 1]
-          path = Topic.create_path(pieces)
-          keys.append(db.Key.from_path(*path))
+        tokens = words_in_tweet[tweet]
+        while word in tokens:
+          start = tokens.index(word)
+          slice = tokens[start:]
+          for index in range(len(slice)):
+            if index == 0:
+              continue
+            pieces = slice[:index + 1]
+            path = Topic.create_path(pieces)
+            keys.append(db.Key.from_path(*path))
 
-          topic_name = ' '.join(pieces)
+            topic_name = ' '.join(pieces)
 
-          if topic_name not in memo:
-            memo[topic_name] = []
-          memo[topic_name].append(tweet)
+            if topic_name not in memo:
+              memo[topic_name] = []
+            memo[topic_name].append(tweet)
+          tokens = tokens[start + 1:]
 
         tweets_by_word.update(memo)
 
