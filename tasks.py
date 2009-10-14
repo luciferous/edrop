@@ -70,57 +70,10 @@ class ETL(webapp.RequestHandler):
       logging.warning("Batch not found %s." % id)
       return
 
-    tweets_by_word = {}
-    words_in_tweet = {}
     tweets = Tweet.from_batch(batch)
-
-    for tweet in tweets:
-      words_in_tweet[tweet] = Topic.tokenize(tweet.content)
-      for word in set(words_in_tweet[tweet]):
-        if word not in tweets_by_word:
-          tweets_by_word[word] = []
-        tweets_by_word[word].append(tweet)
-
-    words = tweets_by_word.keys()
-    parenttopics = Topic.get_by_key_name(['parent:' + word for word in words])
-    begins_a_phrase = dict(zip(words, parenttopics))
-    keys = []
-    for word in words:
-      keys.append(db.Key.from_path(*Topic.create_path([word])))
-
-      if not begins_a_phrase[word]:
-        continue
-
-      memo = {}
-      tweets = tweets_by_word[word]
-      for tweet in tweets:
-        tokens = words_in_tweet[tweet]
-        while word in tokens:
-          start = tokens.index(word)
-          slice = tokens[start:]
-          for index in range(len(slice)):
-            if index == 0:
-              continue
-            pieces = slice[:index + 1]
-            path = Topic.create_path(pieces)
-            keys.append(db.Key.from_path(*path))
-
-            topic_name = ' '.join(pieces)
-
-            if topic_name not in memo:
-              memo[topic_name] = []
-            memo[topic_name].append(tweet)
-          tokens = tokens[start + 1:]
-
-        tweets_by_word.update(memo)
-
-    ontopic = set()
-    for topic in [topic for topic in Topic.get(keys) if topic]:
-      tweets = tweets_by_word[topic.name]
-      for tweet in tweets:
-        tweet.topics.append(topic.key())
-      ontopic.update(tweets)
-
+    tweets_by_topic = Topic.link_topics(tweets)
+    ontopic = set([tweet for tweets in tweets_by_topic.values()
+                         for tweet in tweets])
     batch.delete()
     db.put(ontopic)
 

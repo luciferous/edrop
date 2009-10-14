@@ -186,6 +186,63 @@ class Topic(db.Model):
     return words + urls
   tokenize = staticmethod(tokenize)
 
+  def link_topics(tweets):
+    if isinstance(tweets, Tweet):
+      tweets = [tweets]
+
+    tweets_by_word = {}
+    words_in_tweet = {}
+
+    for tweet in tweets:
+      words_in_tweet[tweet] = Topic.tokenize(tweet.content)
+      for word in set(words_in_tweet[tweet]):
+        if word not in tweets_by_word:
+          tweets_by_word[word] = []
+        tweets_by_word[word].append(tweet)
+
+    words = tweets_by_word.keys()
+    parenttopics = Topic.get_by_key_name(['parent:' + word for word in words])
+    begins_a_phrase = dict(zip(words, parenttopics))
+    keys = []
+    for word in words:
+      keys.append(db.Key.from_path(*Topic.create_path([word])))
+
+      if not begins_a_phrase[word]:
+        continue
+
+      memo = {}
+      tweets = tweets_by_word[word]
+      for tweet in tweets:
+        tokens = words_in_tweet[tweet]
+        while word in tokens:
+          start = tokens.index(word)
+          slice = tokens[start:]
+          for index in range(len(slice)):
+            if index == 0:
+              continue
+            pieces = slice[:index + 1]
+            path = Topic.create_path(pieces)
+            keys.append(db.Key.from_path(*path))
+
+            topic_name = ' '.join(pieces)
+
+            if topic_name not in memo:
+              memo[topic_name] = []
+            memo[topic_name].append(tweet)
+          tokens = tokens[start + 1:]
+
+        tweets_by_word.update(memo)
+
+    tweets_per_topic = {}
+    topics = [topic for topic in Topic.get(keys) if topic]
+    for topic in topics:
+      tweets_per_topic[topic] = tweets_by_word[topic.name]
+      for tweet in tweets_per_topic[topic]:
+        tweet.topics.append(topic.key())
+
+    return tweets_per_topic
+  link_topics = staticmethod(link_topics)
+
 class Settings(db.Model):
   value = db.StringProperty(required=True)
 
