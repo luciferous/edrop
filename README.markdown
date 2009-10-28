@@ -47,7 +47,8 @@ We can query the datastore:
 
 The datastore even allows a list of keys, which would run in one query:
 
-    keys = ["my", "favorite", "movie", ..., "man"] Topic.get(keys)
+    keys = ["my", "favorite", "movie", ..., "man"]
+    Topic.get(keys)
 
 (In the actual application, we prefix each key name with "key:", and each
 ancestor key name with "parent:".)
