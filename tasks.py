@@ -72,9 +72,13 @@ class ETL(webapp.RequestHandler):
 
     tweets = Tweet.from_batch(batch)
     tweets_by_topic = Topic.link_topics(tweets)
-    ontopic = set([tweet for tweets in tweets_by_topic.values()
-                         for tweet in tweets])
+    ontopic = set()
+    for topic, tweets in tweets_by_topic.items():
+      topic.set_activity(len(tweets))
+      ontopic.update(tweets)
+
     batch.delete()
+    db.put(tweets_by_topic.keys())
     db.put(ontopic)
 
 application = webapp.WSGIApplication([
