@@ -1,8 +1,10 @@
 import unittest
 import logging
 from models import Topic, Tweet
+from models import int_to_uni, uni_to_int
 from google.appengine.ext import db
 from google.appengine.api import apiproxy_stub_map
+from datetime import datetime, timedelta
 
 class TestModels(unittest.TestCase):
 
@@ -51,6 +53,61 @@ class TestModels(unittest.TestCase):
     topic_names = [topic.name for topic in topics.keys()]
 
     self.assertTrue("like son" in topic_names)
+
+  def test_unicode_storage(self):
+    for n in range(65535):
+      self.assertEquals(uni_to_int(int_to_uni(n)), n)
+
+  def test_activity(self):
+    topic_nodes = Topic.from_tokens("activity_test_topic")
+    db.put(topic_nodes)
+    topic = topic_nodes[-1]
+
+    epoch = datetime(2009, 7, 12)
+    topic.set_activity(1, _now=epoch)
+    self.assertEqual(topic.get_activity(_now=epoch), 1)
+
+    topic.set_activity(2, _now=epoch + timedelta(4))
+    self.assertEqual(topic.get_activity(_now=epoch + timedelta(4)), 2)
+
+    topic.set_activity(3, _now=epoch + timedelta(800))
+    self.assertEqual(topic.get_activity(_now=epoch + timedelta(800)), 3)
+
+    def before_epoch(topic):
+      topic.set_activity(6500, _now=epoch - timedelta(1))
+    self.assertRaises(ValueError, before_epoch, topic)
+
+    db.delete(topic_nodes)
+
+  def test_activity_order(self):
+    # Create topics
+    ramen_nodes = Topic.from_tokens("ramen")
+    varelse_nodes = Topic.from_tokens("varelse")
+    db.put(ramen_nodes + varelse_nodes)
+    # Just take the leaf nodes
+    ramen, varelse = ramen_nodes[-1], varelse_nodes[-1]
+
+    # Set an artificial epoch
+    epoch = datetime(2009, 7, 12)
+
+    # New topics should have no history
+    self.assertEqual(ramen.get_activity(_now=epoch), 0)
+    self.assertEqual(varelse.get_activity(_now=epoch), 0)
+
+    # Day 0, Batch 0
+    ramen.set_activity(5, _now=epoch)
+    ramen.put()
+    self.assertEqual(ramen.name, Topic.all().order("-activity").get().name)
+
+    # Day 0, Batch 7
+    varelse.set_activity(2, _now=epoch + timedelta(0, 60 * 7))
+    varelse.put()
+    self.assertEqual(ramen.name, Topic.all().order("-activity").get().name)
+
+    # Day 1, Batch 0
+    varelse.set_activity(2, _now=epoch + timedelta(1))
+    varelse.put()
+    self.assertEqual(varelse.name, Topic.all().order("-activity").get().name)
 
   def setUp(self):
     # Multiword topics are a linked nodes, i.e., robert => paulson

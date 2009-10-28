@@ -106,11 +106,13 @@ class Topic(db.Model):
     created_at: When the topic was created.
     creator: The User who created the topic. Can be None.
     score: A ranking property, yet unused.
+    activity: Can be decoded to determine how active a topic is.
   """
   name = db.StringProperty()
   created_at = db.DateTimeProperty(auto_now_add=True)
   creator = db.UserProperty()
   score = db.IntegerProperty(default=0)
+  activity = db.StringProperty(default=chr(0) * 60, multiline=True)
 
   @property
   def tweets(self):
@@ -242,6 +244,147 @@ class Topic(db.Model):
 
     return tweets_per_topic
   link_topics = staticmethod(link_topics)
+
+  def get_activity(self, _now=datetime.now()):
+    """Returns the activity of a topic.
+
+    Returns
+      The activity value.
+      """
+    length = len(self.activity) - 1
+    offset = uni_to_int(self.activity[0])
+    day = (_now - LOCAL_EPOCH).days
+    index = length - (day - offset)
+
+    if 0 <= index < len(self.activity):
+      return uni_to_int(self.activity[index])
+
+  def set_activity(self, activity, _now=datetime.now()):
+    """Set the activity of a topic, optionally specifying a date.
+
+    Activity is a measure of how frequently a topic is mentioned per day.
+    After capturing a series of frequencies, it is easy to tell if a topic is
+    interesting by measuring the activity change over consecutive samples.
+
+    The series of activity samples is stored as a unicode string of unicode
+    characters. In each character is encoded a number in range(65536). This
+    structure is ordered so that the oldest sample is the last character (i.e.,
+    frequencies[-1]), and the most recent sample is second character(i.e.,
+    frequencies[1]). The first character is used to determine how many days the
+    oldest sample is from the local epoch. Without it, it's impossible to know
+    determine the index position of the activity for any day after epoch +
+    timedelta(60).
+
+    Because the sample length is fixed, when the newest data overwrites the
+    oldest data. Think of a fixed-length linked list instead of a circular
+    buffer, or imagine a window sliding left over a series of samples.
+
+    Parameters
+      activity: The activity value.
+      _now: Date to store the activity for.
+    Returns
+      None
+    """
+    offset = uni_to_int(self.activity[0])
+    day = (_now - LOCAL_EPOCH).days
+
+    index = day - offset
+    payload_char_length = len(self.activity) - 1
+    if index < 0: # This case is only possible in testing.
+      raise ValueError("Can only store values after offset, not before.")
+    elif 0 <= index < payload_char_length:
+      index = payload_char_length - index
+      self.activity = self.activity[:index] + \
+          int_to_uni(activity) + self.activity[index + 1:]
+    else:
+      newoffset = index - payload_char_length + 1
+      shift = min(newoffset, payload_char_length)
+      self.activity = int_to_uni(newoffset + offset) + \
+          chr(0) * shift + self.activity[1:-shift]
+      self.activity = self.activity[:1] + \
+          int_to_uni(activity) + self.activity[2:]
+
+def int_to_uni(number):
+  """Converts an integer into a unicode character.
+
+  The integer is encoded into a UTF-8 byte sequence, which is then decoded into
+  a single unicode character. UTF-8 is an 8-bit encoding, where each byte in a
+  the sequence consists of two parts: Marker bits (the most significant bits)
+  and payload bits.
+
+    Range                      Encoding
+    U-00000000 ... U-0000007F  0xxxxxxx
+    U-00000080 ... U-000007FF  110xxxxx 10xxxxxx
+    U-00000800 ... U-0000FFFF  1110xxxx 10xxxxxx 10xxxxxx
+    ...                        ...
+
+  The least significant bit of the Unicode character is the rightmost x bit.
+
+  Read more about UTF-8 at
+  http://docs.python.org/library/codecs.html#encodings-and-unicode.
+
+  The reason for using UTF-8 is because the version of the Python runtime on
+  App Engine is 2.5.2 which has problems with some unicode characters.
+
+  Encoding works:
+
+    >>> u"\ud800".encode('utf-16')
+    '\xff\xfe\x00\xd8'
+
+  But decoding fails:
+
+    >>> '\xff\xfe\x00\xd8'.decode('utf-16')
+    Traceback...
+    UnicodeDecodeError: 'utf16' codec can't decode bytes...
+
+    Parameters
+      number: An integer.
+    Returns
+      A unicode character.
+  """
+  # Guarantee ushort range.
+  if not (0 <= number <= 65535):
+    raise OverflowError("number must be in range 0 <= number <= 65535")
+  # Numbers up to 127 can be encoded in seven bits.
+  if number < 128:
+    # No decoding necessary, i.e chr(127) == u"\u007f" returns True.
+    return chr(number)
+  # Process the six least significant bits and turn on the Marker bits.
+  bytes = chr(number & 63 | 128)
+  number = number >> 6
+  # While the number is too large to be encoded in the Marker byte...
+  while number >= 64 >> len(bytes):
+    # ... Process six bits and prepend to the bytestring.
+    bytes = chr(number & 63 | 128) + bytes
+    number = number >> 6
+  # Python uses an infinite number of bits to store numbers, and negative
+  # numbers have an infinite number of leading ones instead of leading zeroes.
+  bytes = chr(number | (-128 >> len(bytes) & 255)) + bytes
+  return bytes.decode('utf8')
+
+
+def uni_to_int(char):
+  """Converts an unicode character into an integer.
+
+    Parameters
+      char: A unicode character.
+    Returns
+      A number.
+  """
+  bytes = [ord(byte) for byte in char.encode('utf8')]
+  # For numbers < 128, tail = []
+  head, tail = bytes[0], bytes[1:]
+  # Extract the payload bits from each byte, shift the result by the necessary
+  # amount, and return the sum of the resulting numbers.
+  return sum(
+      map(
+        lambda char, shift: char << shift,
+        # When shifted right by the tail length, 127 becomes the complement of
+        # the mask for the Marker bits.
+        [head & 127 >> len(tail)] + [byte & 63 for byte in tail],
+        [24, 18, 12, 6, 0][-len(bytes):]
+        )
+      )
 
 class Settings(db.Model):
   value = db.StringProperty(required=True)
