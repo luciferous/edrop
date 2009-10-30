@@ -7,6 +7,8 @@ from google.appengine.api import urlfetch
 from google.appengine.api import urlfetch_errors
 from google.appengine.api.labs import taskqueue
 from google.appengine.api import memcache
+from google.appengine.ext import db
+from django.utils import simplejson
 
 from models import *
 
@@ -73,18 +75,38 @@ class ETL(webapp.RequestHandler):
     tweets = Tweet.from_batch(batch)
     tweets_by_topic = Topic.link_topics(tweets)
     ontopic = set()
+    topic_activity = {}
     for topic, tweets in tweets_by_topic.items():
-      topic.set_activity(len(tweets))
+      topic_activity[str(topic.key())] = len(tweets)
       ontopic.update(tweets)
 
+    taskqueue.add(
+        url='/tasks/activity',
+        params={ 'values': simplejson.dumps(topic_activity) }
+        )
+
     batch.delete()
-    db.put(tweets_by_topic.keys())
     db.put(ontopic)
+
+class Activity(webapp.RequestHandler):
+
+  def post(self):
+    topic_activity = simplejson.loads(self.request.get('values'))
+
+    def increment_activity(topic_key, activity):
+      topic = Topic.get(topic_key)
+      activity += topic.get_activity() or 0
+      topic.set_activity(activity)
+      db.put(topic)
+
+    for encoded, activity in topic_activity.items():
+      db.run_in_transaction(increment_activity, db.Key(encoded), activity)
 
 application = webapp.WSGIApplication([
   ('/tasks/queuefetch', QueueFetch),
   ('/tasks/fetch', Fetch),
   ('/tasks/etl', ETL),
+  ('/tasks/activity', Activity),
 ], debug=True)
 
 def main():
