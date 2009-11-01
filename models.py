@@ -5,7 +5,7 @@
 from google.appengine.ext import db
 from google.appengine.api import datastore_errors
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pickle
 from pickle import UnpicklingError
@@ -112,12 +112,14 @@ class Topic(db.Model):
     creator: The User who created the topic. Can be None.
     score: A ranking property, yet unused.
     activity: Can be decoded to determine how active a topic is.
+    weekly_rank: A ranking based on activity in the last week.
   """
   name = db.StringProperty()
   created_at = db.DateTimeProperty(auto_now_add=True)
   creator = db.UserProperty()
   score = db.IntegerProperty(default=0)
   activity = db.StringProperty(default=chr(0) * 60, multiline=True)
+  weekly_rank = db.StringProperty()
 
   @property
   def tweets(self):
@@ -249,6 +251,25 @@ class Topic(db.Model):
 
     return tweets_per_topic
   link_topics = staticmethod(link_topics)
+
+  def record_activity(self, score, batchsize=20, _now=datetime.now()):
+    activity = ((score / float(batchsize)) * 65535) / 1440.
+    activity += self.get_activity(_now=_now) or 0
+    self.set_activity(int(activity), _now=_now)
+    activities = [
+        self.get_activity(_now=_now - timedelta(offset)) or 0
+        for offset
+        in range(7, 0, -1)
+        ]
+    changes = map(
+        lambda p, q: 0 if p == 0 else float(q) / p,
+        activities[:-1],
+        activities[1:]
+        )
+    days = (_now - LOCAL_EPOCH).days
+    self.weekly_rank = "%10f" % (
+        days * DAY_SCALE + sum(changes) / float(len(changes))
+        )
 
   def get_activity(self, _now=datetime.now()):
     """Returns the activity of a topic.

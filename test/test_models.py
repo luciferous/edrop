@@ -145,6 +145,57 @@ class TestModels(unittest.TestCase):
 
     db.delete(key)
 
+  def test_trend_ranking(self):
+    nodes = Topic.from_tokens("ender") + Topic.from_tokens("valentine")
+    db.put(nodes)
+    ender, valentine = Topic.gql(
+        "WHERE name IN :1", ["ender", "valentine"]
+        ).fetch(2)
+
+    epoch = datetime(2009, 7, 12)
+
+    for day in range(16):
+      ender.record_activity(day, _now=epoch + timedelta(day))
+    for day in range(16):
+      valentine.record_activity(18, _now=epoch + timedelta(day))
+
+    ender.save()
+    valentine.save()
+    self.assertEqual(
+        ender.name,
+        Topic.all().order("-weekly_rank").get().name
+        )
+
+    for day in range(16, 32):
+      valentine.record_activity(1.2 * day, _now=epoch + timedelta(day))
+
+    valentine.save()
+    self.assertEqual(
+        valentine.name,
+        Topic.all().order("-weekly_rank").get().name
+        )
+
+    logging.info("Valentine: %s" % valentine.weekly_rank)
+    logging.info("Ender: %s" % ender.weekly_rank)
+
+    db.delete(nodes)
+
+  def test_activity_limits(self):
+    nodes = Topic.from_tokens("aqua")
+    db.put(nodes)
+
+    topic = Topic.gql("WHERE name = :1", "aqua").get()
+
+    epoch = datetime(2009, 7, 12)
+
+    for minute in range(1440):
+      topic.record_activity(20, _now=epoch + timedelta(0, minute))
+    topic.put()
+
+    self.assertEqual(topic.get_activity(_now=epoch), int(65535.0 / 1440) * 1440)
+
+    db.delete(nodes)
+
   def setUp(self):
     # Multiword topics are a linked nodes, i.e., robert => paulson
     nodes = Topic.from_tokens(Topic.tokenize("Robert Paulson"))
