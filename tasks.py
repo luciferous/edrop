@@ -12,6 +12,7 @@ from django.utils import simplejson
 
 from models import *
 
+import pickle
 import wsgiref.handlers
 import logging
 import re
@@ -39,8 +40,9 @@ class Fetch(webapp.RequestHandler):
     url = self.request.get('url')
     try:
       response = urlfetch.fetch(url)
-      if response.status_code == 200 and response.content.startswith("["):
-        key = Batch(data=response.content).put()
+      if response.status_code == 200:
+        items = simplejson.loads(response.content)
+        key = Batch(pickled_items=pickle.dumps(items)).put()
         if key:
           taskqueue.Task(
               url='/tasks/etl',

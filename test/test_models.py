@@ -1,6 +1,8 @@
 import unittest
 import logging
-from models import Topic, Tweet
+import pickle
+
+from models import Topic, Tweet, Batch
 from models import int_to_uni, uni_to_int
 from google.appengine.ext import db
 from google.appengine.api import apiproxy_stub_map
@@ -108,6 +110,28 @@ class TestModels(unittest.TestCase):
     varelse.set_activity(2, _now=epoch + timedelta(1))
     varelse.put()
     self.assertEqual(varelse.name, Topic.all().order("-activity").get().name)
+
+  def test_batch(self):
+    items = []
+    items.append({
+        "text": "His name is Robert Paulson",
+        "created_at": "Mon Aug 10 21:24:24 +0000 2009",
+        "id": 1234,
+        "user": {
+          "profile_image_url": "http://example.com/",
+          "screen_name": "Jack",
+          "followers_count": 100,
+          "friends_count": 100,
+          }
+        })
+
+    key = Batch(pickled_items=pickle.dumps(items)).put()
+    tweets = Tweet.from_batch(Batch.get(key))
+
+    self.assertEqual(1, len(tweets))
+    self.assertEqual("His name is Robert Paulson", tweets[0].content)
+
+    db.delete(key)
 
   def setUp(self):
     # Multiword topics are a linked nodes, i.e., robert => paulson

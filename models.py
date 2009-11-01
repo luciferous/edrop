@@ -3,10 +3,12 @@
 """Model classes and utility functions."""
 
 from google.appengine.ext import db
-from django.utils.simplejson import decoder
 from google.appengine.api import datastore_errors
 
 from datetime import datetime
+
+import pickle
+from pickle import UnpicklingError
 
 import re
 import operator
@@ -23,10 +25,10 @@ class Batch(db.Model):
   """Represents the JSON string from the Twitter public timeline.
 
   Properties
-    data: JSON from the public timeline.
+    pickled_items: Pickled JSON from the public timeline.
     created_at: Timestamp for this batch.
   """
-  data = db.TextProperty()
+  pickled_items = db.BlobProperty()
   created_at = db.DateTimeProperty(auto_now_add=True)
 
 class Tweet(db.Model):
@@ -65,8 +67,11 @@ class Tweet(db.Model):
     Returns
       A list of Tweets converted from items in the Batch.
     """
-    dec = decoder.JSONDecoder()
-    feed = dec.decode(batch.data)
+    try:
+      feed = pickle.loads(batch.pickled_items)
+    except UnpicklingError:
+      logging.error("Could not unpickle Batch %d" % batch.key().id())
+
     tweets = []
     for item in feed:
       if item['user']['followers_count'] == 0 or \
