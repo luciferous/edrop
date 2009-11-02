@@ -48,6 +48,8 @@ class Fetch(webapp.RequestHandler):
               url='/tasks/etl',
               params={'batch_id': key.id()}
               ).add('etl')
+      else:
+        logging.info("Fetch failed, got response %d" % response.status_code)
     except urlfetch_errors.DownloadError, e:
       logging.info("Twitter responded too slowly. %s" % e.message)
 
