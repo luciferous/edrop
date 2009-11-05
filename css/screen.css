@@ -23,14 +23,14 @@ header {
     margin: 0; }
   header h1 a, header h1 span {
     font-size: 84px;
-    color: #acd;
+    color: #77aad8;
     font-weight: normal;
     font-style: normal;
     letter-spacing: -4px; }
   header h2 {
     font-size: 13px;
     margin: -20px 0 0 6px;
-    color: #aaa;
+    color: #888;
     font-weight: normal;
     letter-spacing: -0.600px; }
 
@@ -40,7 +40,7 @@ p {
   line-height: 20px; }
 
 strong {
-  color: #000;
+  color: #468;
   font-weight: bold; }
 
 section {
@@ -158,7 +158,7 @@ input[type*=submit]:hover {
   text-align: right;
   padding: 12px 0; }
   .squeeze>footer a {
-    color: #ccc;
+    color: #bbb;
     text-decoration: none;
     font-weight: bold;
     font-family: helvetica, arial, sans-serif; }
