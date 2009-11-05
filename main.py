@@ -27,6 +27,10 @@ class TopicDetail(webapp.RequestHandler):
     path = Topic.create_path(tokens)
     topic = Topic.get(db.Key.from_path(*path))
 
+    if not topic:
+      self.error(404)
+      return
+
     tweets = []
     messages = []
     try:
@@ -43,7 +47,8 @@ class TopicDetail(webapp.RequestHandler):
         'messages': messages,
         'tweets': tweets,
         'topic': topic,
-        'request_path': self.request.path
+        'request_path': self.request.path,
+        'new_topic': (datetime.now() - topic.created_at).seconds < 360,
         }
 
     def render_html(template_values):
@@ -122,18 +127,18 @@ class Main(webapp.RequestHandler):
     tweets = Tweet.all().order("-created_at").fetch(5)
     template_values = {
         'title': 'edrop',
-        'tweets': tweets
+        'tweets': tweets,
+        'is_front': True,
         }
     path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
     self.response.out.write(template.render(path, template_values))
 
   def post(self):
-    """Redirects the search term to the appropriate topic URL."""
-    topic_name = self.request.get('name')
-    if topic_name:
-      self.redirect('/topics/%s' % urllib.quote(topic_name.encode('utf8')))
-    else:
-      self.error(404)
+    """Returns results based on the search term."""
+    # TODO
+    #topic_name = self.request.get('name')
+    #topic_name = topic_name.strip()
+    self.error(404)
 
 class SettingsHandler(webapp.RequestHandler):
   """Handles requests to set settings."""

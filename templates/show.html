@@ -1,120 +1,64 @@
 {% extends "base.html" %}
 
-{% block header %}
+{% block head %}
   {% if topic %}
-    <link rel="alternate" type="application/rss+xml" title="{{ topic.name|escape }} (RSS)" href="http://e-drop.appspot.com{{ request_path}}.rss"/>
-
-    <script type="text/javascript">
-      $.tpl("tweet", [
-        '<div class="tweet">',
-          '<img src="{pic_url}" alt="Picture of {author}"',
-               'height="48" width="48"/>',
-          '<span class="content">{content}</span>',
-          '<div class="meta">',
-            '<span class="author">{author}</span>',
-            '<abbr class="timeago" title="{created_at}">{created_at}</abbr>',
-            '<a href="{source_url}">View original</a>',
-          '</div>',
-        '</div>',
-        ]);
-
-      $(function() {
-        $("abbr[class*=timeago]").timeago();
-        var timeAlive = $.timeago($("#topic-created-at")).slice(0, -3)
-        $("#topic-created-at").before("for " + timeAlive)
-
-        var display = function(items) {
-          var item = items.pop();
-          if (item == null) return;
-
-          if ($("#tweets .tweet").size() > 9) {
-            $("#tweets .tweet:last").fadeOut("slow", function() { $(this).remove(); });
-          }
-
-          var tweetHTML = $.tpl("tweet", item, true);
-          var el = $(tweetHTML).css( { display:"none", opacity:0 } ).prependTo("#tweets");
-          el.find("abbr[class*=timeago]").timeago();
-          el.slideDown("slow", function() {
-              $(this).animate( { opacity: 1 }, "slow",
-                    function() { display(items); });
-              });
-        };
-
-        window.setInterval(function() {
-          $.getJSON(document.location.href + ".json", function(data) {
-              if (data.length < 1) return;
-              var href = $("#tweets .meta a").eq(0).attr("href");
-              var head = (href == null) ? null : $.filename(href);
-              var index = data.length - 1;
-              while (index >= 0) {
-                if (data[index].source_id == head) break;
-                index--;
-              }
-              if (head == null) $("#tweets p:last").fadeOut();
-              display(data.slice(0, (index == -1 ? data.length : index)));
-            });
-        }, 60000);
-      });
-    </script>
+    {% include "topic-head.html" %}
   {% endif %}
-{% endblock header %}
+{% endblock head %}
 
 {% block content %}
-  {% if topic %}
-    {% if tweets %}
+<section class="clearfix">
+  <h1>{{ topic.name|escape }}</h1>
+  {% if tweets %}
+    <ul id="sort-links" class="clearfix">
+      <li><a href="{{ request_path }}">Most recent</a></li>
+      <li><a href="{{ request_path }}?order=-influence"
+        >Most influential</a></li>
+    </ul>
+  {% endif %}
 
-      <span class="left">Sort tweets by:</span><ul id="sort-menu">
-        <li><a href="{{ request_path }}">Most recent</a></li>
-        <li><a href="{{ request_path }}?order=-influence"
-          >Most influential</a></li>
-      </ul>
-    {% endif %}
+  <div id="tweets">
 
-    <div id="tweets">
+  {% if tweets %}
 
-    {% if tweets %}
+    {% for tweet in tweets %}
+      <article class="clearfix">
+        <header>
+          <img src="{{ tweet.pic_url }}" alt="{{ tweet.author }}" />
+        </header>
+        <p>{{ tweet.content|urlize }}</p>
+        <footer>
+        <p>{{ tweet.author }} <a href="{{ tweet.source_url }}"><time
+          title="{{ tweet.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+          pubdate>{{ tweet.created_at|date:"Y-m-d H:i:s" }}</time></a></p>
+        </footer>
+      </article>
+    {% endfor %}
 
-      {% for tweet in tweets %}
-        <div class="tweet">
-          <img src="{{ tweet.pic_url }}" alt="Picture of {{ tweet.author }}"
-          height="48" width="48"/>
-          <span class="content">{{ tweet.content|urlize }}</span>
-          <div class="meta">
-            <span class="author">{{ tweet.author }}</span>
-            <abbr class="timeago"
-                  title="{{ tweet.created_at|date:"Y-m-d\TH:i:s\Z" }}"
-              >{{ tweet.created_at|date:"Y-m-d H:i:s" }}</abbr>
-            <a href="{{ tweet.source_url }}">View original</a>
-          </div>
-        </div>
-      {% endfor %}
-
-      <p>{{ topic.name }} has remained interesting <span id="topic-created-at"
-        title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
-        >since {{ topic.created_at|date:"M d Y, g:iA" }}</span>.</p>
-
-    {% else %}
-
-      <p>Nobody has talked about <strong>{{ topic.name|escape }}</strong> since
-      we started eavesdropping <abbr class="timeago"
-        title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
-        > on {{ topic.created_at|date:"M d Y, g:iA" }}</abbr>.</p>
-
-    {% endif %}
-
-    </div>
+    <p>Started eavesdropping for <strong>{{ topic.name|escape }}</strong>
+    <time id="topic-created-at"
+      title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+      >{{ topic.created_at|date:"M d Y, g:iA" }}</time>.</p>
 
   {% else %}
 
-    <h2>Nobody knows about {{ topic_name|escape }} yet. You're
-      the first person to eavesdrop on it!</h2>
-    <form method="POST" action="/topics/">
-      <input type="hidden" name="name" value="{{ topic_name|escape }}"/>
-      <div class="dialog-buttons">
-        <input type="submit" value="Eavesdrop"/>
-        <a href="/">Actually, I've changed my mind</a>
-      </div>
-    </form>
+    {% if new_topic %}
+    <p>We <i>just</i> started eavesdropping for
+      <strong>{{ topic.name|escape }}</strong>
+      <time title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+      > on {{ topic.created_at|date:"M d Y, g:iA" }}</time> and haven't found
+      anything. Check back here in a minute or two.</p>
 
+    {% else %}
+
+    <p>Nobody has talked about
+    <strong>{{ topic.name|escape }}</strong> since we started eavesdropping
+    <time title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+    > on {{ topic.created_at|date:"M d Y, g:iA" }}</time>.</p>
+
+    {% endif %}
   {% endif %}
+
+  </div>
+</section>
 {% endblock content %}

@@ -1,0 +1,228 @@
+.squeeze {
+  margin: 20px auto;
+  width: 720px; }
+
+body {
+  font-family: lucida sans grande, verdana, sans-serif;
+  /*background: #000;*/
+  margin: 0;
+  padding: 0; }
+
+a {
+  font-style: italic;
+  font-size: 22px;
+  text-decoration: none; }
+
+header {
+  display: block; }
+  header hgroup {
+    width: 240px;
+    font-family: helvetica, arial, serif;
+    padding: 0 32px; }
+  header h1 {
+    margin: 0; }
+  header h1 a, header h1 span {
+    font-size: 84px;
+    color: #acd;
+    font-weight: normal;
+    font-style: normal;
+    letter-spacing: -4px; }
+  header h2 {
+    font-size: 13px;
+    margin: -20px 0 0 6px;
+    color: #aaa;
+    font-weight: normal;
+    letter-spacing: -0.600px; }
+
+p {
+  font-size: 18px;
+  color: #777;
+  line-height: 20px; }
+
+strong {
+  color: #000;
+  font-weight: bold; }
+
+section {
+  display: block;
+  overflow: hidden;
+  margin: 12px 0 0;
+  background: #ad8;
+  -moz-border-radius: 20px;
+  -webkit-border-radius: 20px;
+  padding: 12px 32px; }
+  section p {
+    color: #296; }
+  section h1 {
+    font-size: 82px;
+    /*margin: 0 0 32px;*/
+    margin: 0;
+    color: #ea764a;
+    font-family: helvetica, arial, sans-serif;
+    float: left;
+    line-height: 88px;
+    letter-spacing: -7px; }
+  section a {
+    color: #581;
+    font-family: book, garamond;
+    font-weight: bold; }
+  section strong {
+    font-style: italic;
+    font-family: garamond;
+    color: #c75; }
+
+em {
+  font-weight: bold;
+  color: #c42;
+  font-style: normal; }
+
+input {
+  font-family: helvetica, arial, sans-serif;
+  font-size: 18px;
+  border: 0; }
+
+input[type*=submit] {
+  padding: 2px;
+  background: #000;
+  text-transform: lowercase;
+  font-style: italic;
+  font-weight: bold;
+  font-family: garamond;
+  color: #668;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px; }
+
+input[type*=submit]:focus,
+input[type*=submit]:hover {
+  color: #c8c8dd;
+  background: #448; }
+
+.search {
+  margin: 12px 0 0;
+  text-align: center;
+  background: #556;
+  padding: 12px 32px 12px;
+  -moz-border-radius: 20px;
+  -webkit-border-radius: 20px; }
+  .search p {
+    text-align: center;
+    color: #fff;
+    font-size: 22px; }
+  .search input[type*=text] {
+    text-transform: uppercase;
+    margin: 1px;
+    width: 80%;
+    float: left;
+    background: transparent;
+    font-weight: bold; }
+    .search input[type*=text]:focus {
+      outline: 0; }
+  .search input[type*=submit] {
+    float: right;
+    width: 12%;
+    margin: 1px; }
+
+.dialog-buttons input {
+  margin-right: 32px; }
+
+.search .inputs {
+  margin: 12px auto;
+  background: #acd;
+  width: 320px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px; }
+
+.clearfix:after {
+  content: ".";
+  display: block;
+  visibility: hidden;
+  height: 0;
+  clear: both; }
+
+.preamble {
+  margin: 0;
+  padding: 28px 32px 28px 304px;
+  letter-spacing: -0.100em;
+  line-height: 22px;
+  font-size: 18px;
+  /*background: #eee;*/
+  background: #e0e0f8;
+  -moz-border-radius: 0 20px 20px 20px;
+  -webkit-border-radius: 0 20px;
+  border-radius: 0 20px; }
+
+.squeeze>footer {
+  display: block;
+  /*background: #000;*/
+  color: #888;
+  text-align: right;
+  padding: 12px 0; }
+  .squeeze>footer a {
+    color: #ccc;
+    text-decoration: none;
+    font-weight: bold;
+    font-family: helvetica, arial, sans-serif; }
+
+.left {
+  float: left; }
+
+#tweets {
+  clear: both;
+  padding-top: 16px; }
+#tweets>p {
+  margin-top: 32px; }
+
+#tweets article {
+  display: block;
+  margin: 0  0 16px; }
+  #tweets article h1 {
+    font-size: 24px;
+    color: #040;
+    letter-spacing: 0;
+    float: none; }
+  #tweets article header {
+    display: block;
+    float: left; }
+    #tweets article header img {
+      border: 1px solid #444;
+      width: 48px;
+      height: 48px; }
+  #tweets article footer {
+    display: block;
+    margin: 0 12px 0 64px; }
+  #tweets article>p {
+    background: #eee;
+    margin: 0 0 6px 64px;
+    padding: 12px;
+    -moz-border-radius: 0 20px 20px 20px;
+    -webkit-border-radius: 20px;
+    line-height: 26px; }
+
+#tweets footer>p {
+  margin: 0;
+  padding: 6px 12px;
+  color: #ea764a;
+  font-weight: bold;
+  text-align: right; }
+#tweets footer a {
+  font-size: 14px; }
+
+#sort-links {
+  /*margin: 44px 0 0 156px;*/
+  margin: 48px 0 0;
+  padding: 0;
+  float: right; }
+  #sort-links li {
+    list-style: none;
+    float: left;
+    margin-left: 22px;
+    display: block; }
+  #sort-links a {
+    padding: 2px 6px;
+    background: #5a5;
+    color: #ad8;
+    font-size: 18px;
+    font-family: garamond;
+    font-style: italic;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px; }

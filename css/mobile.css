@@ -1,0 +1,17 @@
+.squeeze {
+  margin: 0;
+  width: auto;
+}
+
+body {
+  margin: auto;
+}
+
+input[type*=text] {
+  width: 75%;
+}
+
+input[type*=submit] {
+  width: 12%;
+}
+
