@@ -29,7 +29,7 @@
         <p>{{ tweet.content|urlize }}</p>
         <footer>
         <p>{{ tweet.author }} <a href="{{ tweet.source_url }}"><time
-          title="{{ tweet.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+          datetime="{{ tweet.created_at|date:"Y-m-d\TH:i:s\Z" }}"
           pubdate>{{ tweet.created_at|date:"Y-m-d H:i:s" }}</time></a></p>
         </footer>
       </article>
@@ -37,24 +37,24 @@
 
     <p>Started eavesdropping for <strong>{{ topic.name|escape }}</strong>
     <time id="topic-created-at"
-      title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
-      >{{ topic.created_at|date:"M d Y, g:iA" }}</time>.</p>
+      datetime="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
+      >on {{ topic.created_at|date:"M d Y, g:iA" }}</time>.</p>
 
   {% else %}
 
     {% if new_topic %}
-    <p>We <i>just</i> started eavesdropping for
-      <strong>{{ topic.name|escape }}</strong>
-      <time title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
-      > on {{ topic.created_at|date:"M d Y, g:iA" }}</time> and haven't found
-      anything. Check back here in a minute or two.</p>
+    <p>We've only <i>just</i> started eavesdropping for
+    <strong>{{ topic.name|escape }}</strong>
+    <time datetime="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}">
+    on {{ topic.created_at|date:"M d Y, g:iA" }}</time>
+    and haven't found anything. Check back here in a minute or two.</p>
 
     {% else %}
 
     <p>Nobody has talked about
     <strong>{{ topic.name|escape }}</strong> since we started eavesdropping
-    <time title="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}"
-    > on {{ topic.created_at|date:"M d Y, g:iA" }}</time>.</p>
+    <time datetime="{{ topic.created_at|date:"Y-m-d\TH:i:s\Z" }}">
+    on {{ topic.created_at|date:"M d Y, g:iA" }}</time>.</p>
 
     {% endif %}
   {% endif %}

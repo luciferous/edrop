@@ -1,54 +1,45 @@
 <link rel="alternate" type="application/rss+xml" title="{{ topic.name|escape }} (RSS)" href="http://e-drop.appspot.com{{ request_path}}.rss"/>
 
-<script type="text/javascript">
-  $.tpl("tweet", [
-    '<article class="clearfix">',
-      '<header>',
-        '<img src="{pic_url}" alt="{author}" />',
-      '</header>',
-      '<p>{content}</p>',
-      '<footer>',
-      '<p>{author} <a href="{source_url}">',
-        '<time title="{created_at}"',
-        'pubdate>{created_at}</time></a></p>',
-      '</footer>',
-    '</article>',
-    ]);
+<script type="text/html" id="tweet_template">
+  <article class="clearfix">
+    <header><img src="<%=pic_url%>" alt="<%=author%>"/></header>
+    <p><%=content%></p>
+    <footer>
+      <p><%=author%> <a href="<%=source_url%>">
+      <time title="<%=created_at%>" pubdate><%=created_at%></time></a></p>
+    </footer>
+  </article>
+</script>
 
+<script type="text/javascript">
   $(function() {
     $("time").timeago();
-    //var timeAlive = $.timeago($("#topic-created-at")).slice(0, -3)
-    //$("#topic-created-at").before("for " + timeAlive)
-
-    var display = function(items) {
+    var showTweet = tmpl("tweet_template");
+    var display = function(items){
       var item = items.pop();
       if (item == null) return;
-
-      if ($("#tweets article").size() > 9) {
-        $("#tweets article:last").fadeOut("slow", function() { $(this).remove(); });
-      }
-
-      var tweetHTML = $.tpl("tweet", item, true);
-      var el = $(tweetHTML).css( { display:"none", opacity:0 } ).prependTo("#tweets");
+      var tweetHTML = showTweet(item);
+      var el = $(tweetHTML).css({ display:"none", opacity:0 }).prependTo("#tweets");
       el.find("time").timeago();
-      el.slideDown("slow", function() {
-          $(this).animate( { opacity: 1 }, "slow",
-                function() { display(items); });
-          });
+      if ($("#tweets article").size() > 10) {
+        $("#tweets article:last").fadeOut("slow", function(){ $(this).remove(); });
+      }
+      el.slideDown("slow", function(){
+        $(this).animate({ opacity: 1 }, "slow", function(){ display(items); });
+      });
     };
 
-    window.setInterval(function() {
-      $.getJSON(document.location.href + ".json", function(data) {
+    setInterval(
+      function(){
+        $.getJSON(document.location.href + ".json", function(data){
           if (data.length < 1) return;
-          var href = $("#tweets footer a").eq(0).attr("href");
-          var head = (href == null) ? null : $.filename(href);
-          var index = data.length - 1;
-          while (index >= 0) {
-            if (data[index].source_id == head) break;
-            index--;
+          if ($("#tweets article").size() == 0) {
+            $("#tweets p:last").fadeOut();
           }
-          if (head == null) $("#tweets p:last").fadeOut();
-          display(data.slice(0, (index == -1 ? data.length : index)));
+          var first = $("#tweets footer a")[0].href.split("/").pop();
+          var newIDs = $.map(data, function(tweet){ return tweet.source_id; });
+          var end = newIDs.indexOf(first);
+          display(data.slice(0, end == -1 ? data.length : end));
         });
     }, 60000);
   });
