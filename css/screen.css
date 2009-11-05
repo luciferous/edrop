@@ -1,6 +1,34 @@
 .squeeze {
-  margin: 20px auto;
+  margin: 52px auto 0;
   width: 720px; }
+  .squeeze>footer {
+    display: block;
+    color: #888;
+    line-height: 22px;
+    font-size: 12px;
+    font-family: helvetica, arial, sans-serif;
+    padding: 12px 0; }
+    .squeeze>footer section {
+      margin: 48px 0 0;
+      padding: 4px 32px;
+      background: transparent;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      color: #aaa; }
+      .squeeze>footer section a {
+        color: #88b;
+        font-size: 12px;
+        font-style: normal;
+        font-weight: normal;
+        font-family: helvetica, arial, sans-serif;
+        text-decoration: underline; }
+    .squeeze>footer .author {
+      color: #888;
+      font-weight: bold;
+      text-align: right;
+      font-style: italic; }
+      .squeeze>footer .author a {
+        color: #bbb; }
 
 body {
   font-family: lucida sans grande, verdana, sans-serif;
@@ -150,18 +178,6 @@ input[type*=submit]:hover {
   -moz-border-radius: 0 20px 20px 20px;
   -webkit-border-radius: 0 20px;
   border-radius: 0 20px; }
-
-.squeeze>footer {
-  display: block;
-  /*background: #000;*/
-  color: #888;
-  text-align: right;
-  padding: 12px 0; }
-  .squeeze>footer a {
-    color: #bbb;
-    text-decoration: none;
-    font-weight: bold;
-    font-family: helvetica, arial, sans-serif; }
 
 .left {
   float: left; }

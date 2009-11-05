@@ -6,12 +6,16 @@
   <link href="/css/screen.css" rel="stylesheet" media="screen"/>
   <link href="/css/mobile.css" rel="stylesheet"
     media="only screen and (max-device-width: 480px)"/>
-  <script type="text/javascript" src="/js/jquery-1.3.2.min.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
   <script type="text/javascript" src="/js/utils.js"></script>
   {% block head %}{% endblock head %}
 </head>
 
 <body>
+<a href="http://github.com/luciferous/edrop/"><img
+  style="position: absolute; top: 0; left: 0; border: 0;"
+  src="http://s3.amazonaws.com/github/ribbons/forkme_left_darkblue_121621.png"
+  alt="Fork me on GitHub" /></a>
 <div class="squeeze">
 
   <header>
@@ -38,7 +42,14 @@
   {% block content %}{% endblock content %}
 
   <footer>
-    <span class="author">by <a title="Neuman Vong" href="http://twitter.com/luciferous">luciferous</a></span>
+    <div class="author">by <a title="Neuman Vong"
+      href="http://twitter.com/luciferous">luciferous</a></div>
+    <section>
+      <div>
+        &copy; <a href="http://www.google.com/profiles/neuman.vong">Neuman Vong</a> &mdash;
+        Released under a <a href="http://creativecommons.org/licenses/BSD/">BSD License</a>.
+      </div>
+    </section>
   </footer>
 
 </div>
