@@ -34,6 +34,7 @@
   };
 })();
 
+// Adapted from http://code.google.com/p/jquery-utils/wiki/TimeAgo - MIT Licensed
 (function($){
   $.timeago = function(timestamp){
     if(timestamp instanceof Date) return inWords(timestamp);
