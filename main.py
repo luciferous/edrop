@@ -14,6 +14,8 @@ import re
 import urllib
 import logging
 
+NAME_RE = re.compile("@(\w+)")
+
 class TopicDetail(webapp.RequestHandler):
   """Handles list of tweets in a topic."""
 
@@ -52,6 +54,11 @@ class TopicDetail(webapp.RequestHandler):
         }
 
     def render_html(template_values):
+      for tweet in template_values['tweets']:
+        tweet.content = NAME_RE.sub(
+            lambda m: '<a href="http://twitter.com/%s">@%s</a>' % (m.groups() * 2),
+            tweet.content
+            )
       path = os.path.join(os.path.dirname(__file__), 'templates/show.html')
       return template.render(path, template_values)
 
