@@ -21,6 +21,8 @@ LOCAL_EPOCH = datetime(2009, 7, 12)
 URL_RE = re.compile(u"""http://\S+""", re.UNICODE)
 SPLIT_RE = re.compile(u"""[\s.,"\u2026\u3001\u3002?]+""", re.UNICODE)
 
+MAX_ACTIVITY = 0x10ffff
+
 class Batch(db.Model):
   """Represents the JSON string from the Twitter public timeline.
 
@@ -118,7 +120,7 @@ class Topic(db.Model):
   created_at = db.DateTimeProperty(auto_now_add=True)
   creator = db.UserProperty()
   score = db.IntegerProperty(default=0)
-  activity = db.StringProperty(default=chr(0) * 60, multiline=True)
+  activity = db.StringProperty(default=60 * '\x00', multiline=True)
   weekly_rank = db.StringProperty()
 
   @property
@@ -253,9 +255,22 @@ class Topic(db.Model):
   link_topics = staticmethod(link_topics)
 
   def record_activity(self, score, batchsize=20, _now=datetime.now()):
-    activity = ((score / float(batchsize)) * 65535) / 1440.
-    activity += self.get_activity(_now=_now) or 0
-    self.set_activity(int(activity), _now=_now)
+    """Records activity for a topic based on the number of tweets in a batch.
+    Also calculates a weekly rank score based on the last 7 days of activity.
+
+    Parameters
+      score: The number of tweets associated with this topic.
+      batchsize: The size of the batch.
+    """
+    share = (self.get_activity(_now=_now) or 0) / MAX_ACTIVITY
+    size = uni_to_int(self.activity[1])
+
+    count = share * size
+    newsize = size + batchsize
+    newshare = (count + score) / float(newsize)
+    self.activity = self.activity[:1] + int_to_uni(newsize) + self.activity[2:]
+
+    self.set_activity(int(newshare * MAX_ACTIVITY), _now=_now)
     activities = [
         self.get_activity(_now=_now - timedelta(offset)) or 0
         for offset
@@ -267,7 +282,7 @@ class Topic(db.Model):
         activities[1:]
         )
     days = (_now - LOCAL_EPOCH).days
-    self.weekly_rank = "%10f" % (
+    self.weekly_rank = "%20f" % (
         days * DAY_SCALE + sum(changes) / float(len(changes))
         )
 
@@ -277,13 +292,13 @@ class Topic(db.Model):
     Returns
       The activity value.
       """
-    length = len(self.activity) - 1
-    offset = uni_to_int(self.activity[0])
-    day = (_now - LOCAL_EPOCH).days
-    index = length - (day - offset)
+    # First two chars are metadata
+    meta, payload = self.activity[:2], self.activity[2:]
+    offset = uni_to_int(meta[0])
+    index = (_now - LOCAL_EPOCH).days - offset
 
-    if 0 <= index < len(self.activity):
-      return uni_to_int(self.activity[index])
+    if 0 <= index < len(payload):
+      return uni_to_int(payload[len(payload) - index - 1])
 
   def set_activity(self, activity, _now=datetime.now()):
     """Set the activity of a topic, optionally specifying a date.
@@ -311,24 +326,26 @@ class Topic(db.Model):
     Returns
       None
     """
-    offset = uni_to_int(self.activity[0])
-    day = (_now - LOCAL_EPOCH).days
+    # First two chars are metadata
+    meta, payload = self.activity[:2], self.activity[2:]
+    offset = uni_to_int(meta[0])
+    index = (_now - LOCAL_EPOCH).days - offset
 
-    index = day - offset
-    payload_char_length = len(self.activity) - 1
     if index < 0: # This case is only possible in testing.
       raise ValueError("Can only store values after offset, not before.")
-    elif 0 <= index < payload_char_length:
-      index = payload_char_length - index
-      self.activity = self.activity[:index] + \
-          int_to_uni(activity) + self.activity[index + 1:]
+    elif 0 <= index < len(payload):
+      index = len(payload) - index - 1
+      payload = payload[:index] + int_to_uni(activity) + payload[index + 1:]
     else:
-      newoffset = index - payload_char_length + 1
-      shift = min(newoffset, payload_char_length)
-      self.activity = int_to_uni(newoffset + offset) + \
-          chr(0) * shift + self.activity[1:-shift]
-      self.activity = self.activity[:1] + \
-          int_to_uni(activity) + self.activity[2:]
+      # Zero index array needs to be one bigger than last index.
+      grow = 1 + index - len(payload)
+      meta = int_to_uni(offset + grow) + meta[1:]
+      # Truncate pad to length of the payload.
+      grow = min(grow, len(payload))
+      payload = (grow * '\x00') + payload[:-grow]
+      payload = int_to_uni(activity) + payload[1:]
+
+    self.activity = meta + payload
 
 def int_to_uni(number):
   """Converts an integer into a unicode character.
@@ -368,9 +385,9 @@ def int_to_uni(number):
     Returns
       A unicode character.
   """
-  # Guarantee ushort range.
-  if not (0 <= number <= 65535):
-    raise OverflowError("number must be in range 0 <= number <= 65535")
+  # Guarantee range.
+  if not (0 <= number <= MAX_ACTIVITY):
+    raise OverflowError("%s not in range [0, %s]" % (number, MAX_ACTIVITY))
   # Numbers up to 127 can be encoded in seven bits.
   if number < 128:
     # No decoding necessary, i.e chr(127) == u"\u007f" returns True.

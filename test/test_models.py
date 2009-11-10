@@ -78,14 +78,19 @@ class TestModels(unittest.TestCase):
     topic = topic_nodes[-1]
 
     epoch = datetime(2009, 7, 12)
+
     topic.set_activity(1, _now=epoch)
-    self.assertEqual(topic.get_activity(_now=epoch), 1)
+    self.assertEqual(1, topic.get_activity(_now=epoch))
 
     topic.set_activity(2, _now=epoch + timedelta(4))
-    self.assertEqual(topic.get_activity(_now=epoch + timedelta(4)), 2)
+    self.assertEqual(2, topic.get_activity(_now=epoch + timedelta(4)))
 
     topic.set_activity(3, _now=epoch + timedelta(800))
-    self.assertEqual(topic.get_activity(_now=epoch + timedelta(800)), 3)
+    self.assertEqual(3, topic.get_activity(_now=epoch + timedelta(800)))
+
+    for n in xrange(800, 1000):
+      topic.set_activity(n, _now=epoch + timedelta(n))
+      self.assertEqual(n, topic.get_activity(_now=epoch + timedelta(n)))
 
     def before_epoch(topic):
       topic.set_activity(6500, _now=epoch - timedelta(1))
@@ -174,25 +179,6 @@ class TestModels(unittest.TestCase):
         valentine.name,
         Topic.all().order("-weekly_rank").get().name
         )
-
-    logging.info("Valentine: %s" % valentine.weekly_rank)
-    logging.info("Ender: %s" % ender.weekly_rank)
-
-    db.delete(nodes)
-
-  def test_activity_limits(self):
-    nodes = Topic.from_tokens("aqua")
-    db.put(nodes)
-
-    topic = Topic.gql("WHERE name = :1", "aqua").get()
-
-    epoch = datetime(2009, 7, 12)
-
-    for minute in range(1440):
-      topic.record_activity(20, _now=epoch + timedelta(0, minute))
-    topic.put()
-
-    self.assertEqual(topic.get_activity(_now=epoch), int(65535.0 / 1440) * 1440)
 
     db.delete(nodes)
 
