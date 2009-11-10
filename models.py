@@ -262,6 +262,9 @@ class Topic(db.Model):
       score: The number of tweets associated with this topic.
       batchsize: The size of the batch.
     """
+    if score > batchsize:
+      raise ValueError("%d cannot be > batchsize %d" % (score, batchsize))
+
     share = (self.get_activity(_now=_now) or 0) / MAX_ACTIVITY
     size = uni_to_int(self.activity[1])
 

@@ -86,7 +86,10 @@ class ETL(webapp.RequestHandler):
 
     taskqueue.add(
         url='/tasks/activity',
-        params={ 'values': simplejson.dumps(topic_activity) }
+        params={
+          'values': simplejson.dumps(topic_activity),
+          'batchsize': len(tweets)
+          }
         )
 
     batch.delete()
@@ -96,11 +99,11 @@ class Activity(webapp.RequestHandler):
 
   def post(self):
     topic_activity = simplejson.loads(self.request.get('values'))
+    batchsize = int(self.request.get('batchsize'))
 
     def increment_activity(topic_key, activity):
       topic = Topic.get(topic_key)
-      activity += topic.get_activity() or 0
-      topic.set_activity(activity)
+      topic.record_activity(activity, batchsize)
       db.put(topic)
 
     for encoded, activity in topic_activity.items():
