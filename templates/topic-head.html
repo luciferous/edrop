@@ -13,7 +13,7 @@
 
 <script type="text/javascript">
   $(function() {
-    var jsonURL = document.location.href + ".json";
+    var jsonURL = document.location.pathname + ".json" + document.location.search;
     var info = $("#tweets>p");
     var render = (function(){
       var _render = tmpl("tweet_template");
