@@ -164,7 +164,7 @@ class Topic(db.Model):
 
     topics = []
     for keyname, name in zip(keynames, tokens):
-      topic = Topic.get_by_key_name(keyname)
+      topic = Topic.get_by_key_name(keyname, parent=parent)
       if not topic:
         topic = Topic(key_name=keyname, name=name, parent=parent)
         for prop, value in kwargs.items():

@@ -41,6 +41,18 @@ class TestModels(unittest.TestCase):
 
     self.failIf(topics[0].is_saved() or topics[0].is_saved())
 
+    db.put(Topic.from_tokens(Topic.tokenize("of montreal")))
+    db.put(Topic.from_tokens(Topic.tokenize("time of day")))
+
+    ofmontreal, tod = Topic.gql(
+        "WHERE name IN :1",
+        ["of montreal", "time of day"]
+        )
+
+    self.assertEqual(ofmontreal.parent().name, "of")
+    self.assertEqual(tod.parent().name, "of")
+    self.assertNotEqual(str(tod.parent_key()), str(ofmontreal.parent_key()))
+
   def test_link_topics(self):
     tweet = Tweet(content="His name is Robert Paulson")
     topics = Topic.link_topics(tweet)
