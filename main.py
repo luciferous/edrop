@@ -16,6 +16,24 @@ import logging
 
 NAME_RE = re.compile("@(\w+)")
 
+class TopicTruncate(webapp.RequestHandler):
+
+  def get(self, topic_name, format='html'):
+    """Retrieve an HTML page of tweets."""
+    topic_name = urllib.unquote(topic_name)
+    topic_name = topic_name.decode('utf8')
+
+    tokens = Topic.tokenize(topic_name)
+    path = Topic.create_path(tokens)
+    topic = Topic.get(db.Key.from_path(*path))
+
+    if not topic:
+      self.error(404)
+      return
+
+    tweets = topic.tweets.order("created_at").fetch(50)
+    db.delete(tweets)
+
 class TopicDetail(webapp.RequestHandler):
   """Handles list of tweets in a topic."""
 
@@ -177,6 +195,7 @@ class SettingsHandler(webapp.RequestHandler):
 application = webapp.WSGIApplication([
   ('/', Main),
   ('/topics/', TopicIndex),
+  ('/topics/(.+)/truncate', TopicTruncate),
   ('/topics/(.+)\.(\w+)', TopicDetail),
   ('/topics/(.+)', TopicDetail),
   ('/settings/(\w+)', SettingsHandler),
