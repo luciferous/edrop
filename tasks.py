@@ -76,8 +76,8 @@ class ETL(webapp.RequestHandler):
       logging.warning("Batch not found %s." % id)
       return
 
-    tweets = Tweet.from_batch(batch)
-    tweets_by_topic = Topic.link_topics(tweets)
+    alltweets = Tweet.from_batch(batch)
+    tweets_by_topic = Topic.link_topics(alltweets)
     ontopic = set()
     topic_activity = {}
     for topic, tweets in tweets_by_topic.items():
@@ -88,7 +88,7 @@ class ETL(webapp.RequestHandler):
         url='/tasks/activity',
         params={
           'values': simplejson.dumps(topic_activity),
-          'batchsize': len(tweets)
+          'batchsize': len(alltweets)
           }
         )
 
