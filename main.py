@@ -15,6 +15,7 @@ import urllib
 import logging
 
 NAME_RE = re.compile("@(\w+)")
+MAX_TWEETS = 40
 
 class TopicTruncate(webapp.RequestHandler):
 
@@ -31,8 +32,10 @@ class TopicTruncate(webapp.RequestHandler):
       self.error(404)
       return
 
-    tweets = topic.tweets.order("created_at").fetch(50)
-    db.delete(tweets)
+    if Tweet.all().count(MAX_TWEETS) >= MAX_TWEETS
+      db.delete(topic.tweets.order("created_at").fetch(MAX_TWEETS / 2))
+
+    self.response.set_status(204)
 
 class TopicDetail(webapp.RequestHandler):
   """Handles list of tweets in a topic."""
