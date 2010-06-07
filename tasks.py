@@ -18,6 +18,8 @@ import logging
 import re
 import time
 
+MAX_TWEETS = 40
+
 class QueueFetch(webapp.RequestHandler):
   """Puts a task on the fetch queue."""
 
@@ -81,8 +83,12 @@ class ETL(webapp.RequestHandler):
     ontopic = set()
     topic_activity = {}
     for topic, tweets in tweets_by_topic.items():
-      topic_activity[str(topic.key())] = len(tweets)
+      key = str(topic.key())
+      topic_activity[key] = len(tweets)
       ontopic.update(tweets)
+      taskqueue.Task(
+          url='/tasks/truncate', params={'key': key}
+          ).add('truncate')
 
     taskqueue.add(
         url='/tasks/activity',
@@ -94,6 +100,20 @@ class ETL(webapp.RequestHandler):
 
     batch.delete()
     db.put(ontopic)
+
+class Truncate(webapp.RequestHandler):
+
+  def post(self):
+    key = db.Key(self.request.get('key'))
+    topic = Topic.get(key)
+
+    if not topic:
+      self.error(404)
+      return
+
+    if topic.tweets.count(MAX_TWEETS) >= MAX_TWEETS:
+      db.delete(topic.tweets.order("created_at").fetch(MAX_TWEETS / 2))
+      logging.info("Deleted %d tweets from %s." % (MAX_TWEETS / 2, topic.name))
 
 class Activity(webapp.RequestHandler):
 
@@ -117,6 +137,7 @@ application = webapp.WSGIApplication([
   ('/tasks/fetch', Fetch),
   ('/tasks/etl', ETL),
   ('/tasks/activity', Activity),
+  ('/tasks/truncate', Truncate),
 ], debug=True)
 
 def main():

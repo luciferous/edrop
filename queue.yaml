@@ -3,5 +3,7 @@ queue:
   rate: 2/m
 - name: etl
   rate: 2/m
+- name: truncate
+  rate: 10/m
 - name: default
   rate: 5/m

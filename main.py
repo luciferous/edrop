@@ -15,27 +15,6 @@ import urllib
 import logging
 
 NAME_RE = re.compile("@(\w+)")
-MAX_TWEETS = 40
-
-class TopicTruncate(webapp.RequestHandler):
-
-  def get(self, topic_name, format='html'):
-    """Retrieve an HTML page of tweets."""
-    topic_name = urllib.unquote(topic_name)
-    topic_name = topic_name.decode('utf8')
-
-    tokens = Topic.tokenize(topic_name)
-    path = Topic.create_path(tokens)
-    topic = Topic.get(db.Key.from_path(*path))
-
-    if not topic:
-      self.error(404)
-      return
-
-    if Tweet.all().count(MAX_TWEETS) >= MAX_TWEETS
-      db.delete(topic.tweets.order("created_at").fetch(MAX_TWEETS / 2))
-
-    self.response.set_status(204)
 
 class TopicDetail(webapp.RequestHandler):
   """Handles list of tweets in a topic."""
@@ -198,7 +177,6 @@ class SettingsHandler(webapp.RequestHandler):
 application = webapp.WSGIApplication([
   ('/', Main),
   ('/topics/', TopicIndex),
-  ('/topics/(.+)/truncate', TopicTruncate),
   ('/topics/(.+)\.(\w+)', TopicDetail),
   ('/topics/(.+)', TopicDetail),
   ('/settings/(\w+)', SettingsHandler),
