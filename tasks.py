@@ -107,7 +107,10 @@ class Activity(webapp.RequestHandler):
       db.put(topic)
 
     for encoded, activity in topic_activity.items():
-      db.run_in_transaction(increment_activity, db.Key(encoded), activity)
+      try:
+        db.run_in_transaction(increment_activity, db.Key(encoded), activity)
+      except Exception, e:
+        logging.info(e.message)
 
 application = webapp.WSGIApplication([
   ('/tasks/queuefetch', QueueFetch),
